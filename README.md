@@ -12,7 +12,9 @@ php artisan addon:enable StatementAnalyzer
 
 # Normal Installation
 Laravel Normal Installation  
-1. Add In to config/app.php
+1. Create a modules folder and pull the package.
+ 
+2. Add In to config/app.php
 ```
 /*
  * Package Service Providers...
@@ -21,7 +23,7 @@ Laravel Normal Installation
 Ant\StatementAnalyzer\Providers\AddonServiceProvider::class,
 ```
   
-2. Add below code to composer.json
+3. Add below code to composer.json
 ```
   "psr-4": {
       "Ant\\StatementAnalyzer\\": "modules/StatementAnalyzer/src"
@@ -29,5 +31,6 @@ Ant\StatementAnalyzer\Providers\AddonServiceProvider::class,
 
 ```
   
-3. Run composer dump-autoload
+4. Run composer dump-autoload
+5. Run php artisan migrate --path=/path/modules/StatementAnalyzer/database/migrations
 

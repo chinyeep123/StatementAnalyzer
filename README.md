@@ -9,3 +9,25 @@ This is addon for FusionCMS v6 (https://github.com/fusioncms/fusioncms)
 php artisan addon:discover
 php artisan addon:enable StatementAnalyzer
 ``` 
+
+# Normal Installation
+Laravel Normal Installation  
+1. Add In to config/app.php
+```
+/*
+ * Package Service Providers...
+ */
+....
+Ant\StatementAnalyzer\Providers\AddonServiceProvider::class,
+```
+  
+2. Add below code to composer.json
+```
+  "psr-4": {
+      "Ant\\StatementAnalyzer\\": "modules/StatementAnalyzer/src"
+  },
+
+```
+  
+3. Run composer dump-autoload
+

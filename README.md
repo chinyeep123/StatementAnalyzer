@@ -37,9 +37,20 @@ Ant\StatementAnalyzer\Providers\AddonServiceProvider::class,
 ```
 php artisan migrate --path=/path/modules/StatementAnalyzer/database/migrations
 ```
+6. Go to AddonServiceProvider.php replace the code below.
+```
+$this->publishes([
+    __DIR__.'/../../public' => public_path('vendor/statement-analyzer'),
+], 'statement-analyzer');
+```
 
-6. Publish the css and js file
+7. Publish the css and js file
 ```
 php artisan vendor:publish --tag="statement-analyzer"
 ```
 
+8. add in css file and js file
+```
+ <link href="{{ asset('vendor/statement-analyzer/css/app.css') }}" rel="stylesheet">
+ <script src="{{ asset('vendor/statement-analyzer/js/app.js') }}" defer></script>
+```

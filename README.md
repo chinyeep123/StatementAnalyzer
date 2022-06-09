@@ -32,5 +32,14 @@ Ant\StatementAnalyzer\Providers\AddonServiceProvider::class,
 ```
   
 4. Run composer dump-autoload
-5. Run php artisan migrate --path=/path/modules/StatementAnalyzer/database/migrations
+
+5. Run command to migrate the tables
+```
+php artisan migrate --path=/path/modules/StatementAnalyzer/database/migrations
+```
+
+6. Publish the css and js file
+```
+php artisan vendor:publish --tag="statement-analyzer"
+```
 

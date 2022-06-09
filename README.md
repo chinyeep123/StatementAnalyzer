@@ -35,8 +35,9 @@ Ant\StatementAnalyzer\Providers\AddonServiceProvider::class,
 
 5. Run command to migrate the tables
 ```
-php artisan migrate --path=/path/modules/StatementAnalyzer/database/migrations
+php artisan migrate
 ```
+
 6. Go to AddonServiceProvider.php replace the code below.
 ```
 $this->publishes([

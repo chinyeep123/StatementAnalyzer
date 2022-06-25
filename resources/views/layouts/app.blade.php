@@ -1,25 +1,83 @@
-<!doctype html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- CSRF Token -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Laravel Vue</title>
-    <!-- Scripts -->
-    <script src="public/vendor/statement-analyzer/js/app.js?v={{ config('system.versioning') }}" defer></script>
-    <!-- Fonts -->
-    <link rel="dns-prefetch" href="//fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
-    <!-- Styles -->
-    <link href="public/vendor/statement-analyzer/css/app.css?v={{ config('system.versioning') }}" rel="stylesheet">
-</head>
-<body>
-    <div id="app">
-        <main class="py-3">
-            <h3>Laravel Vue</h3>
-            @yield('content')
-        </main>
+<!DOCTYPE html>
+<html lang="en" class="{{ auth()->user()->type ?? '' }}">
+@push('styles')
+<link href="public/vendor/statement-analyzer/css/app.css?v={{ config('system.versioning') }}" rel="stylesheet">
+@endpush
+
+@push('scripts')
+<script src="public/vendor/statement-analyzer/js/app.js?v={{ config('system.versioning') }}" defer></script>
+@endpush
+<!--html header-->
+@include('layout.header')
+<!--html header-->
+
+<body id="main-body"
+    class="loggedin fix-header card-no-border fix-sidebar {{ config('settings.css_kanban') }} {{ runtimePreferenceLeftmenuPosition(auth()->user()->left_menu_position) }} {{ $page['page'] ?? '' }}">
+
+    <!--main wrapper-->
+    <div id="main-wrapper">
+        <div id="app">
+            <!---------------------------------------------------------------------------------------
+                [NEXTLOOP}
+                 always collapse left menu for small devices
+                (NB: this code is in the correct place. It must run before menu is added to DOM)
+             --------------------------------------------------------------------------------------->
+    
+            <!--top nav-->
+            @include('nav.topnav') @include('nav.leftmenu')
+            <!--top nav-->
+    
+    
+            <!--page wrapper-->
+            <div class="page-wrapper">
+    
+                <!--overlay-->
+                <div class="page-wrapper-overlay js-close-side-panels hidden" data-target=""></div>
+                <!--overlay-->
+    
+                <!--preloader-->
+                <div class="preloader">
+                    <div class="loader">
+                        <div class="loader-loading"></div>
+                    </div>
+                </div>
+                <!--preloader-->
+    
+    
+                <!-- main content -->
+                @yield('content')
+                <!-- /#main content -->
+    
+    
+                <!--reminders panel-->
+                @include('pages.reminders.misc.reminder-panel')
+    
+                <!--notifications panel-->
+                @include('nav.notifications-panel')
+            </div>
+            <!--page wrapper-->
+
+        </div>
     </div>
+
+    <!--common modals-->
+    @include('modals.actions-modal-wrapper')
+    @include('modals.common-modal-wrapper')
+    @include('modals.plain-modal-wrapper')
+    @include('pages.authentication.modal.relogin')
+
+    <!--selector - modals-->
+    @include('modals.create')
+
+
+    <!--js footer-->
+    @include('layout.footerjs')
+
+    <!--js automations-->
+    @include('layout.automationjs')
+
+    <!--[note: no sanitizing required] for this trusted content, which is added by the admin-->
+    {!! config('system.settings_theme_body') !!}
 </body>
+
 </html>

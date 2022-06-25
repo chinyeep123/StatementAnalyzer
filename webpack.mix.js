@@ -27,7 +27,9 @@ mix.setPublicPath('public')
         },
     }).options({
         legacyNodePolyfills: false
-    });
+    })
+    .copy('public/css', '../../../public/vendor/statement-analyzer/css')
+    .copy('public/js', '../../../public/vendor/statement-analyzer/js');
 
 // Full API
 // mix.js(src, output);

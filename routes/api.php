@@ -1,5 +1,7 @@
 <?php
 
+use Ant\StatementAnalyzer\Http\Controllers\API\StatementAnalyzerController;
+use Ant\StatementAnalyzer\Http\Controllers\API\StatementTagController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -25,3 +27,6 @@ use Illuminate\Support\Facades\Route;
 // Route::post('order/{order}/generate-invoice', 'OrderController@generateInvoice');
 // Route::post('order/{order}/update-invoice', 'OrderController@updateInvoice');
 // Route::get('statement-analyzer/index', 'StatementAnalyzerController@index');
+Route::get('statement-tags/getAll', [StatementTagController::class, 'getAll'])->name('api.statement-tags.getAll');
+Route::post('statement-tags', [StatementTagController::class, 'store'])->name('api.statement-tags.store');
+Route::get('statements/getAll', [StatementAnalyzerController::class, 'getAll'])->name('api.statements.getAll');

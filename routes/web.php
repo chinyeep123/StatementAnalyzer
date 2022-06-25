@@ -1,5 +1,7 @@
 <?php
 
+// use Ant\StatementAnalyzer\Http\Controllers\Web\StatementAnalyzerController;
+// use Ant\StatementAnalyzer\Http\Controllers\Web\StatementTagController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,11 +15,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Route::group(['middleware' => 'auth'], function() {
-//     Route::get('/my-account/orders', 'OrderController@index')->name('order.index');
-//     Route::get('/my-account/view-order/{order}', 'OrderController@show')->name('order.show');
-// });
-// Route::get('/order/{order}/pdf', 'OrderController@downloadPdf')->middleware('signed')->name('order.pdf');;
-// Route::get('/view-order/{order}', 'OrderController@showSigned')->middleware('signed')->name('order.show_signed');
-
-Route::get('/statement-analyzer', '\Ant\StatementAnalyzer\Http\Controllers\Web\StatementAnalyzerController@index')->name('statement-analyzer.index');
+Route::post("/statements/delete", [Ant\StatementAnalyzer\Http\Controllers\Web\StatementController::class, 'destroy']);
+Route::get("/import/statements/create", [Ant\StatementAnalyzer\Http\Controllers\Web\StatementController::class, 'import']);
+Route::post("/import/statements", [Ant\StatementAnalyzer\Http\Controllers\Web\StatementController::class, 'storeImport']);
+Route::resource('/statements', StatementController::class);
+Route::resource('/statement-tags', StatementTagController::class);

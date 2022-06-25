@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateStatementTagsTable extends Migration
+class CreateStatementStatementTagTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +13,10 @@ class CreateStatementTagsTable extends Migration
      */
     public function up()
     {
-        Schema::create('statement_tags', function (Blueprint $table) {
+        Schema::create('statement_statement_tag', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->nullable()->index();
-            $table->tinyInteger('parent_id')->default(0)->index();
-            $table->softDeletes();
-            $table->timestamps();
+            $table->foreignId('statement_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('statement_tag_id')->constrained()->cascadeOnDelete();
         });
     }
 
@@ -29,6 +27,6 @@ class CreateStatementTagsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('statement_tags');
+        Schema::dropIfExists('statement_statement_tag');
     }
 }

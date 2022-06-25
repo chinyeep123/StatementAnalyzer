@@ -10,8 +10,8 @@ php artisan addon:discover
 php artisan addon:enable StatementAnalyzer
 ``` 
 
-# Normal Installation
-Laravel Normal Installation  
+# Normal Installation 
+GrowCRM Laravel Normal Installation  
 1. Create a modules folder and pull the package.
  
 2. Add In to config/app.php

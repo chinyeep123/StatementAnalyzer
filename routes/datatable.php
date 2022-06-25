@@ -15,5 +15,5 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/statement-analyzer', function () {
     return 'aa';
-})->name('datatable.statement-analyzer.index');
+})->name('datatable.statement-analysis.index');
 // Route::get('/statement-analyzer', '\Ant\StatementAnalyzer\Http\Controllers\DataTable\StatementAnalyzerController@index');

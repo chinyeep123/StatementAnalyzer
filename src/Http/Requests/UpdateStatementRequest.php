@@ -28,7 +28,7 @@ class UpdateStatementRequest extends FormRequest
     {
         return [
             'account_number' => ['required'],
-            'date' => ['required', 'date_format:Y-m-d'],
+            'date' => ['required'],
             'description' => ['required'],
             'balance_currency' => ['required'],
             'balance' => ['required'],

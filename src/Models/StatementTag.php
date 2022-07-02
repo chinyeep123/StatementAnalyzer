@@ -10,11 +10,7 @@ class StatementTag extends Model {
 
     use SoftDeletes;
     
-    /**
-     * @dateFormat string - date storage format
-     */
     protected $table = 'statement_tags';
-    protected $dateFormat = 'Y-m-d H:i:s';
 
     /**
      * The attributes that are mass assignable.
@@ -25,6 +21,8 @@ class StatementTag extends Model {
         'name',
         'parent_id',
     ];
+
+    protected $hidden = ["created_at", "updated_at", "deleted_at"];
 
     /**
      * return parent tags
@@ -38,7 +36,17 @@ class StatementTag extends Model {
      */
     public function scopeChild(Builder $builder) {
         return $builder->where('parent_id', '!=', false);
-    } 
+    }
+
+
+    /**
+     * relatioship business rules:
+     * - the tags has belongsTo statement_tags
+     */
+    public function parent()
+    {
+        return $this->belongsTo(StatementTag::class, 'parent_id');
+    }
 
     /**
      * relatioship business rules:

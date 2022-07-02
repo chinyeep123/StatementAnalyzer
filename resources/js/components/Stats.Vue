@@ -1,8 +1,12 @@
 <template>
-    <div class="stats-wrapper" :id="settings.module + '-stats-wrapper'">
+    <div 
+        class="stats-wrapper" 
+        :id="moduleName + '-stats-wrapper'"
+        v-show="show"
+    >
         <!--WIDGET NOTES: stats displayed on top of result tables and list pages-->
-        <div class="card-group table-stats-cards  hidden" id="list-pages-stats-widget">
-            <div v-for="(stat, index) in settings.stats" class="card">
+        <div class="card-group table-stats-cards" id="list-pages-stats-widget">
+            <div v-for="(stat, index) in this.stats" class="card">
                 <div class="card-body">
                     <div class="row">
                         <div class="col-12">
@@ -26,9 +30,18 @@
     export default {
         name: 'Stats',
         props: {
-            settings: {
-                type: Object,
+            moduleName: {
+                type: String,
                 required: true,
+            },
+            stats: {
+                type: Array,
+                required: true,
+            },
+            show: {
+                type: Boolean,
+                required: true,
+                default: false,
             },
         },
         head: {

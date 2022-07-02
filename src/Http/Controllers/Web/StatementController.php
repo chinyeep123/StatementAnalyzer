@@ -5,7 +5,6 @@ use Ant\StatementAnalyzer\Http\Requests\ImportStatementRequest;
 use Ant\StatementAnalyzer\Http\Requests\StoreStatementRequest;
 use Ant\StatementAnalyzer\Http\Requests\UpdateStatementRequest;
 use Ant\StatementAnalyzer\Http\Responses\Statements\DestroyResponse;
-use Ant\StatementAnalyzer\Http\Responses\Statements\EditResponse;
 use Ant\StatementAnalyzer\Http\Responses\Statements\ImportCreateResponse;
 use Ant\StatementAnalyzer\Http\Responses\Statements\ImportStoreResponse;
 use Ant\StatementAnalyzer\Http\Responses\Statements\IndexResponse;
@@ -13,9 +12,12 @@ use Ant\StatementAnalyzer\Http\Responses\Statements\UpdateResponse;
 use Ant\StatementAnalyzer\Imports\StatementImport;
 use Ant\StatementAnalyzer\Models\Statement;
 use Ant\StatementAnalyzer\Models\StatementTag;
+use Ant\StatementAnalyzer\Repositories\StatementRepository;
+use Ant\StatementAnalyzer\Repositories\StatementTagRepository;
 use App\Http\Controllers\Controller;
 use App\Repositories\ImportExportRepository;
 use App\Repositories\SystemRepository;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Request;
@@ -25,7 +27,19 @@ use Illuminate\Support\Str;
 
 class StatementController extends Controller {
 
+    /**
+     * The statement repository instance.
+     */
+    protected $statementrepo;
+    
+    /**
+     * The statement repository instance.
+     */
+    protected $statementtagrepo;
+
     public function __construct(
+        StatementRepository $statementrepo,
+        StatementTagRepository $statementtagrepo
     ) {
 
         //core controller instantation
@@ -33,6 +47,37 @@ class StatementController extends Controller {
 
         //authenticated
         $this->middleware('auth');
+
+        $this->middleware('statementsMiddlewareIndex')->only([
+            'index',
+            'update',
+            'store',
+            'import'
+        ]);
+
+        $this->middleware('statementsMiddlewareCreate')->only([
+            'create',
+            'store',
+            'storeImport'
+        ]);
+
+        $this->middleware('statementsMiddlewareEdit')->only([
+            'edit',
+            'update',
+        ]);
+
+        $this->middleware('statementsMiddlewareDestroy')->only([
+            'destroy',
+        ]);
+
+        //team only stuff
+        $this->middleware('teamCheck')->only([
+            'accountNumbers',
+        ]);
+
+        $this->statementrepo = $statementrepo;
+
+        $this->statementtagrepo = $statementtagrepo;
     }
 
     /**
@@ -41,23 +86,11 @@ class StatementController extends Controller {
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
      */
     public function index() {
-        $query = new Statement();
         if(Request::ajax()) {
-            if (in_array(request('sortorder'), array('desc', 'asc')) && request('orderby') != '') {
-                //direct column name
-                if (Schema::hasColumn('statements', request('orderby'))) {
-                    $query = $query->orderBy(request('orderby'), request('sortorder'));
-                } else {
-                    $query = $query->orderByDesc('created_at');
-                }
-            }
-            $statements = $query->paginate(config('system.settings_system_pagination_limits'));
-            //reponse payload
-            $payload = [
-                'statements' => $statements,
-                'stats' => $this->statsWidget(),
-            ];
-            return new IndexResponse($payload);
+            $statements = $this->statementrepo->search();
+            $stats = $this->statsWidget();
+            $analysis = $this->statementrepo->search('', ['stats' => 'analysis']);
+            return response()->json(compact('statements', 'stats', 'analysis'));
         }
         
         $settings = collect([
@@ -68,9 +101,8 @@ class StatementController extends Controller {
             'is_team' => auth()->user()->is_team,
             'can_import' => true,
             'url' => url('/'),
-            'stats' => $this->statsWidget(),
-            'statements' => $query->orderByDesc('created_at')->paginate(config('system.settings_system_pagination_limits'))
         ]);
+
         return view('statement-analyzer::index', compact('settings'));
     }
 
@@ -113,29 +145,20 @@ class StatementController extends Controller {
     /**
      * Display the specified resource.
      *
-     * @param  Tag  $tag
+     * @param  Statement  $statement
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function show($id) {
+    public function show(Statement $statement) {
         
     }
 
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  Tag  $tag
+     * @param  Statement  $statement
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
      */
-    public function edit($id) {
-        $statement = Statement::findOrFail($id);
-
-        //reponse payload
-        $payload = [
-            'statement' => $statement,
-        ];
-
-        //response
-        return new EditResponse($payload);
+    public function edit(Statement $statement) {
     }
 
     /**
@@ -159,16 +182,7 @@ class StatementController extends Controller {
             'balance' => $request->balance,
         ]);
         $this->syncStatementTags($statement);
-        if($request->ref == 'list') {
-            //reponse payload
-            $payload = [
-                'statements' => (new Statement())->paginate(config('system.settings_system_pagination_limits')),
-                'stats' => $this->statsWidget(),
-            ];
-
-            //generate a response
-            return new UpdateResponse($payload);
-        }
+        
         $status = 200;
         $message = 'Data Updated Successful!';
         return response()->json(compact('status', 'message'));
@@ -187,15 +201,17 @@ class StatementController extends Controller {
             $allrows[] = $statement->getKey();
             $statement->tags()->detach();
         }
-        foreach (request('ids') as $id => $value) {
-            //only checked items
-            if ($value == 'on') {
-                //delete
-                $statement = Statement::findOrFail($id);
-                $statement->delete();
-                $statement->tags()->detach();
-                //add to array
-                $allrows[] = $id;
+        if(!empty(request('ids'))) {
+            foreach (request('ids') as $id => $value) {
+                //only checked items
+                if ($value == 'on') {
+                    //delete
+                    $statement = Statement::findOrFail($id);
+                    $statement->delete();
+                    $statement->tags()->detach();
+                    //add to array
+                    $allrows[] = $id;
+                }
             }
         }
 
@@ -276,12 +292,24 @@ class StatementController extends Controller {
         return new ImportStoreResponse($payload);
     }
 
+    /**
+     * ajax search results for account numbers
+     * @permissions team members only
+     * @return \Illuminate\Http\Response
+     */
+    public function accountNumbers(StatementRepository $statementrepo) {
+        $feed = $this->statementrepo->autocompleteFeed('account_number', request('term'));
+
+        return response()->json($feed);
+    }
+
     protected function syncStatementTags($statement) {
         $tags = StatementTag::get();
         if($tags->count()) {
             $tag_ids = $tags->filter(function($tag) use($statement) {
                 return Str::contains(Str::lower($statement->description), Str::lower($tag->name));
             })->pluck('id');
+
             $statement->tags()->sync($tag_ids->toArray());
         }
     }
@@ -290,7 +318,6 @@ class StatementController extends Controller {
      * additional processing for the imported collection
      */
     private function processCollection() {
-
         //get the statements for this import
         $statements = Statement::Where('importid', request('import_ref'))->get();
         foreach($statements as $statement) {
@@ -305,18 +332,12 @@ class StatementController extends Controller {
     private function statsWidget($data = array()) {
 
         //stats
-        $sum_count_all = Statement::count();
-        $sum_money_in = Statement::sum('money_in');
-        $sum_money_out = Statement::sum('money_out');
-        // $sum_all = Statement::selectRaw("statements.account_number, statements.balance, statements.created_at as latest_date")
-        //                     // ->latest('latest_date')
-        //                     ->orderByDesc('latest_date')
-        //                     ->groupby(['statements.account_number'])
-        //                     ->get();
-        //default values
+        $count_all = $this->statementrepo->search('', ['stats' => 'count-all']);
+        $sum_money_in = $this->statementrepo->search('', ['stats' => 'sum-money_in']);
+        $sum_money_out = $this->statementrepo->search('', ['stats' => 'sum-money_out']);
         $stats = [
             [
-                'value' => $sum_count_all,
+                'value' => $count_all,
                 'title' => __('lang.count'),
                 'percentage' => '100%',
                 'color' => 'bg-info',
@@ -335,7 +356,7 @@ class StatementController extends Controller {
             ],
             [
                 'value' => runtimeMoneyFormat(0),
-                'title' => __('lang.balance'),
+                'title' => "N",
                 'percentage' => '100%',
                 'color' => 'bg-danger',
             ],

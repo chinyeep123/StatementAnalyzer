@@ -9,11 +9,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 
 class StatementStatementTag extends Model {
 
-    /**
-     * @dateFormat string - date storage format
-     */
     protected $table = 'statement_statement_tag';
-    protected $dateFormat = 'Y-m-d H:i:s';
 
     /**
      * The attributes that are mass assignable.
@@ -27,18 +23,18 @@ class StatementStatementTag extends Model {
 
     /**
      * relatioship business rules:
-     * - belongsToMany specific statement
+     * - belongsTo specific statement
      */
     public function statement() {
-        return $this->belongsToMany(Statement::class);
+        return $this->belongsTo(Statement::class, 'statement_id');
     }
 
     /**
      * relatioship business rules:
-     * - belongsToMany specific tag
+     * - belongsTo specific tag
      */
     public function tag() {
-        return $this->belongsToMany(StatementTag::class);
+        return $this->belongsTo(StatementTag::class, 'statement_tag_id');
     }
 
 }

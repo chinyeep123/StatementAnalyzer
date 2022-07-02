@@ -1,13 +1,13 @@
 <?php
 
 /** --------------------------------------------------------------------------------
- * This classes renders the response for the [destroy] process for the statements
+ * This classes renders the response for the [destroy] process for the statement_tags
  * controller
  * @package    Grow CRM
  * @author     NextLoop
  *----------------------------------------------------------------------------------*/
 
-namespace Ant\StatementAnalyzer\Http\Responses\Statements;
+namespace Ant\StatementAnalyzer\Http\Responses\StatementTags;
 use Illuminate\Contracts\Support\Responsable;
 
 class DestroyResponse implements Responsable {
@@ -34,19 +34,9 @@ class DestroyResponse implements Responsable {
         //hide and remove all deleted rows
         foreach ($allrows as $id) {
             $jsondata['dom_visibility'][] = array(
-                'selector' => '#statements_' . $id,
+                'selector' => '#statement-tags_' . $id,
                 'action' => 'slideup-slow-remove',
             );
-        }
-
-        //refresh stats
-        if (isset($stats)) {
-            $html = view('misc/list-pages-stats-content', compact('stats'))->render();
-            $jsondata['dom_html'][] = [
-                'selector' => '#list-pages-stats-widget',
-                'action' => 'replace',
-                'value' => $html,
-            ];
         }
 
         //notice

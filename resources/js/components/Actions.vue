@@ -1,14 +1,21 @@
 <template>
-    <div class="col-md-12  col-lg-7 p-b-9 align-self-center text-right  " id="list-page-actions-container">
+    <div class="col-md-12  col-lg-7 p-b-9 align-self-center text-right" id="list-page-actions-container">
         <div id="list-page-actions">
             <!--SEARCH BOX-->
             <div class="header-search" id="header-search">
                 <i class="sl-icon-magnifier"></i>
-                <input type="text" class="form-control search-records list-actions-search" :data-url="getURL('/search?action=search&amp;paymentresource_id=&amp;paymentresource_type=')" data-type="form" data-ajax-type="post" data-form-id="header-search" id="search_query" name="search_query" placeholder="Search">
+                <input type="text" 
+                    class="form-control search-records list-actions-search" 
+                    id="search_query" 
+                    name="search_query" 
+                    placeholder="Search"
+                    v-model="search"
+                    @change="onSearch"
+                >
             </div>
             
             <!--TOGGLE STATS-->
-            <button type="button" data-toggle="tooltip" title="Quick Stats" class="list-actions-button btn btn-page-actions waves-effect waves-dark js-toggle-stats-widget update-user-ux-preferences" data-type="statspanel" data-progress-bar="hidden" :data-url-temp="this.url + '/' +'team/updatepreferences'" data-url="" data-target="list-pages-stats-widget">
+            <button type="button" data-toggle="tooltip" title="Quick Stats" class="list-actions-button btn btn-page-actions waves-effect waves-dark js-toggle-stats-widget update-user-ux-preferences" @click.stop="onShowStat">
                 <i class="ti-stats-up"></i>
             </button>
             
@@ -28,7 +35,7 @@
             </button>
             
             <!--ADD NEW ITEM-->
-            <button type="button" class="btn btn-danger btn-add-circle edit-add-modal-button js-ajax-ux-request reset-target-modal-form " data-toggle="modal" :data-target="'#' + this.modalTarget" :data-action-ajax-loading-target="this.modalTarget" data-project-progress="0">
+            <button type="button" class="btn btn-danger btn-add-circle edit-add-modal-button js-ajax-ux-request reset-target-modal-form" @click.stop="onShowCreateModal" data-project-progress="0">
                 <i class="ti-plus"></i>
             </button>
             
@@ -61,10 +68,15 @@ export default {
             type: Boolean,
             required: false,
             default: false
+        },
+        searchQuery: {
+            type: String,
+            required: false,
         }
     },
     data() {
       return {
+        search: this.searchQuery,
       };
     },
     methods: {
@@ -73,7 +85,16 @@ export default {
         },
         getFirstUpper(string) {
             return _.capitalize(string);
-        }
+        },
+        onSearch() {
+            this.$emit('on-search', this.search);
+        },
+        onShowStat() {
+            this.$emit('on-show-stat')
+        },
+        onShowCreateModal() {
+            this.$emit('on-show-create')
+        },
     }
 }
 </script>

@@ -8,6 +8,8 @@
  *----------------------------------------------------------------------------------*/
 
 namespace Ant\StatementAnalyzer\Http\Responses\Statements;
+
+use Ant\StatementAnalyzer\Models\StatementStatementTag;
 use Illuminate\Contracts\Support\Responsable;
 
 class IndexResponse implements Responsable {
@@ -53,7 +55,7 @@ class IndexResponse implements Responsable {
 
             //from search box or filter panel
             case 'search':
-                $template = 'pages/statements/components/table/table';
+                $template = 'statement-analyzer::components/table/table';
                 $dom_container = '#statements-table-wrapper';
                 $dom_action = 'replace-with';
                 break;
@@ -65,7 +67,6 @@ class IndexResponse implements Responsable {
                 $dom_action = 'replace';
                 break;
             }
-
             //load more button - change the page number and determine buttons visibility
             if ($statements->currentPage() < $statements->lastPage()) {
                 $url = loadMoreButtonUrl($statements->currentPage() + 1, request('source'));
@@ -98,7 +99,8 @@ class IndexResponse implements Responsable {
                 'module' => 'statements',
                 'url' => url('/'),
             ));
-            $html = view($template, compact('settings'))->render();
+
+            $html = view($template, compact('page', 'stats', 'settings'))->render();
             $jsondata['dom_html'][] = array(
                 'selector' => $dom_container,
                 'action' => $dom_action,
@@ -132,9 +134,15 @@ class IndexResponse implements Responsable {
             ];
 
             //reload stats widget
-            $html = view('misc/list-pages-stats', compact('stats'))->render();
+            $html = view('statement-analyzer::misc/list-pages-stats', compact('stats'))->render();
             $jsondata['dom_html'][] = array(
                 'selector' => '#list-pages-stats-widget',
+                'action' => 'replace-with',
+                'value' => $html);
+            $analysis = StatementStatementTag::with(['statement', 'tag'])->whereIn('statement_id', $statement_analysis_ids)->get();
+            $html = view('statement-analyzer::misc/list-pages-analyzer', compact('stats', 'analysis', 'parent_statement_tags'))->render();
+            $jsondata['dom_html'][] = array(
+                'selector' => '#list-pages-stats-analyzer',
                 'action' => 'replace-with',
                 'value' => $html);
 
@@ -161,7 +169,7 @@ class IndexResponse implements Responsable {
             $page['url'] = loadMoreButtonUrl($statements->currentPage() + 1, request('source'));
             $page['loading_target'] = 'temp-td-container';
             $page['visibility_show_load_more'] = ($statements->currentPage() < $statements->lastPage()) ? true : false;
-            return view('statement-analyzer::index', compact('page', 'statements', 'stats', 'categories', 'tags', 'projects'))->render();
+            return view('statement-analyzer::index', compact('page', 'statements', 'stats'))->render();
         }
 
     }

@@ -3,15 +3,58 @@ namespace Ant\StatementAnalyzer\Http\Controllers\Web;
 
 use Ant\StatementAnalyzer\Http\Requests\StoreStatementTagRequest;
 use Ant\StatementAnalyzer\Http\Requests\UpdateStatementTagRequest;
+use Ant\StatementAnalyzer\Http\Responses\StatementTags\DestroyResponse;
 use Ant\StatementAnalyzer\Models\Statement;
 use Ant\StatementAnalyzer\Models\StatementTag;
+use Ant\StatementAnalyzer\Repositories\StatementTagRepository;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class StatementTagController extends Controller {
+
+    public function __construct(
+        StatementTagRepository $statementtagrepo
+    ) {
+
+        //core controller instantation
+        parent::__construct();
+
+        //authenticated
+        $this->middleware('auth');
+
+        $this->middleware('statementTagsMiddlewareIndex')->only([
+            'index',
+            'update',
+            'store',
+        ]);
+
+        $this->middleware('statementTagsMiddlewareCreate')->only([
+            'create',
+            'store',
+        ]);
+
+        $this->middleware('statementTagsMiddlewareEdit')->only([
+            'edit',
+            'update',
+        ]);
+
+        $this->middleware('statementTagsMiddlewareDestroy')->only([
+            'destroy',
+        ]);
+
+        //team only stuff
+        $this->middleware('teamCheck')->only([
+            'all',
+            'categories',
+            'tags',
+        ]);
+
+        $this->statementtagrepo = $statementtagrepo;
+    }
 
     /**
      * Display a listing of the resource.
@@ -19,18 +62,10 @@ class StatementTagController extends Controller {
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
      */
     public function index() {
-        $settings = collect([
-            'module' => 'statement-tags',
-            'tabs' => collect([
-                ['name' => 'Statements']
-            ]),
-            'active_tab' => trans('lang.statement_tags'),
-            'source_for_filter_panels' => 'ext',
-            'is_team' => auth()->user()->is_team,
-            'url' => url('/'),
-            'statement_tags' => StatementTag::orderByDesc('created_at')->get()
-        ]);
-        return view('statement-analyzer::tags.index', compact('settings'));
+        if(Request::ajax()) {
+            $statement_tags = $this->statementtagrepo->search();
+            return response()->json(compact('statement_tags'));
+        }
     }
 
     /**
@@ -39,41 +74,6 @@ class StatementTagController extends Controller {
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
      */
     public function create() {
-        $settings = collect([
-            'module' => 'statement-tags',
-            'tabs' => collect([
-                ['name' => 'Statement Tags']
-            ]),
-            'active_tab' => trans('lang.statement_tags'),
-            'source_for_filter_panels' => 'ext',
-            'is_team' => auth()->user()->is_team,
-            'url' => url('/'),
-        ]);
-
-        // $html = view('pages/payments/components/modals/add-edit-inc', compact('page', 'invoice'))->render();
-        // $jsondata['dom_html'][] = array(
-        //     'selector' => '#commonModalBody',
-        //     'action' => 'replace',
-        //     'value' => $html);
-        // return view('statement-analyzer::tags.create', compact('settings'));
-        
-        //render the form
-        $html = view('statement-analyzer::tags.create')->render();
-        $jsondata['dom_html'][] = array(
-            'selector' => '#commonModalBody',
-            'action' => 'replace',
-            'value' => $html);
-
-        //show modal footer
-        $jsondata['dom_visibility'][] = array('selector' => '#commonModalFooter', 'action' => 'show');
-
-        // POSTRUN FUNCTIONS------
-        $jsondata['postrun_functions'][] = [
-            'value' => 'NXStatementTagCreate',
-        ];
-
-        //ajax response
-        return response()->json($jsondata);
     }
 
     /**
@@ -99,23 +99,19 @@ class StatementTagController extends Controller {
     /**
      * Display the specified resource.
      *
-     * @param  Tag  $tag
+     * @param  StatementTag  $statementTag
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function show($id) {
-        
-        return view('statement-analyzer::tags.show', compact('settings'));
+    public function show(StatementTag $statementTag) {
     }
 
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  Tag  $tag
+     * @param  StatementTag  $statementTag
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
      */
-    public function edit() {
-
-        return view('statement-analyzer::tags.edit', compact('settings'));
+    public function edit(StatementTag $statementTag) {
     }
 
     /**
@@ -145,20 +141,59 @@ class StatementTagController extends Controller {
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
      */
     public function destroy(StatementTag $statementTag) {
-        $statementTag->delete();
-        $statementTag->statements()->detach();
+        $allrows = array();
+        if($statementTag->id) {
+            $statementTag->delete();
+            $allrows[] = $statementTag->getKey();
+            $statementTag->statements()->detach();
+        }
+        
+        //reponse payload
+        $payload = [
+            'allrows' => $allrows,
+        ];
+        return new DestroyResponse($payload);
+    }
 
-        $status = 200;
-        $message = 'Data Deleted Successful!';
-        $jsondata['notification'] = array('type' => 'success', 'value' => __('lang.request_has_been_completed'));
-        return response()->json(compact('status', 'message'));
+    /**
+     * ajax search results for tags
+     * @permissions team members only
+     * @return \Illuminate\Http\Response
+     */
+    public function all(StatementTagRepository $statementtagrepo) {
+        $term = request('parent_id') > 0? request('parent_id') : request('term');
+        $feed = $statementtagrepo->autocompleteFeed('all', $term);
+
+        return response()->json($feed);
+    }
+
+    /**
+     * ajax search results for categories
+     * @permissions team members only
+     * @return \Illuminate\Http\Response
+     */
+    public function categories(StatementTagRepository $statementtagrepo) {
+        $feed = $statementtagrepo->autocompleteFeed('parent', request('term'));
+
+        return response()->json($feed);
+    }
+
+    /**
+     * ajax search results for tags
+     * @permissions team members only
+     * @return \Illuminate\Http\Response
+     */
+    public function tags(StatementTagRepository $statementtagrepo) {
+        $feed = $statementtagrepo->autocompleteFeed('child', request('parent_id'));
+
+        return response()->json($feed);
     }
 
     protected function syncStatementTags($tag) {
         $statements = Statement::get();
         if($statements->count()) {
             $statement_ids = $statements->filter(function($statement) use($tag) {
-                return Str::contains(Str::lower($tag->name), Str::lower($statement->description));
+                return Str::contains(Str::lower($statement->description), Str::lower($tag->name));
             })->pluck('id');
             $tag->statements()->sync($statement_ids->toArray());
         }

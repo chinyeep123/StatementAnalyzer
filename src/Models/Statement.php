@@ -15,7 +15,6 @@ class Statement extends Model {
      * @dateFormat string - date storage format
      */
     protected $table = 'statements';
-    protected $dateFormat = 'Y-m-d H:i:s';
 
     /**
      * The attributes that are mass assignable.
@@ -34,6 +33,8 @@ class Statement extends Model {
         'balance_currency',
         'balance',
     ];
+
+    protected $hidden = ["created_at", "updated_at", "deleted_at"];
 
     /**
      * relatioship business rules:

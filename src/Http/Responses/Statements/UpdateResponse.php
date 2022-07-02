@@ -39,7 +39,7 @@ class UpdateResponse implements Responsable {
         ));
         $html = view('statement-analyzer::components/table/table_rows', compact('settings'))->render();
         $jsondata['dom_html'][] = array(
-            'selector' => "#expense_" . $statements->first()->id,
+            'selector' => "#statements_" . $statements->first()->id,
             'action' => 'replace-with',
             'value' => $html);
 

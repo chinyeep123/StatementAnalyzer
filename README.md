@@ -55,3 +55,8 @@ php artisan vendor:publish --tag="statement-analyzer"
  <link href="{{ asset('vendor/statement-analyzer/css/app.css') }}" rel="stylesheet">
  <script src="{{ asset('vendor/statement-analyzer/js/app.js') }}" defer></script>
 ```
+
+9. Can run php artisan serve and browse
+```
+{{ domain_url }}/statements
+{{ domain_url }}/statement-tags

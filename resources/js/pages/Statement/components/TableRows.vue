@@ -17,17 +17,17 @@
             <td :class="moduleName + '_col_description'" :id="moduleName + '_col_description_' + statement.id">
                 {{ statement.description }}
             </td>
-            <td :class="moduleName + '_col_money_in_currency'" :id="moduleName + '_col_money_in_currency_' + statement.id">
-                {{ statement.money_in_currency }}
+            <td :class="moduleName + '_col_debit_currency'" :id="moduleName + '_col_debit_currency_' + statement.id">
+                {{ statement.debit_currency }}
             </td>
-            <td :class="moduleName + '_col_money_in'" :id="moduleName + '_col_money_in_' + statement.id">
-                {{ statement.money_in }}
+            <td :class="moduleName + '_col_debit'" :id="moduleName + '_col_debit_' + statement.id">
+                {{ statement.debit }}
             </td>
-            <td :class="moduleName + '_col_money_out_currency'" :id="moduleName + '_col_money_out_currency_' + statement.id">
-                {{ statement.money_out_currency }}
+            <td :class="moduleName + '_col_credit_currency'" :id="moduleName + '_col_credit_currency_' + statement.id">
+                {{ statement.credit_currency }}
             </td>
-            <td :class="moduleName + '_col_money_out'" :id="moduleName + '_col_money_out_' + statement.id">
-                {{ statement.money_out }}
+            <td :class="moduleName + '_col_credit'" :id="moduleName + '_col_credit_' + statement.id">
+                {{ statement.credit }}
             </td>
             <td :class="moduleName + '_col_balance_currency'" :id="moduleName + '_col_balance_currency_' + statement.id">
                 {{ statement.balance_currency }}
@@ -45,7 +45,7 @@
                         <i class="sl-icon-trash"></i>
                     </button>
                     <!--edit-->
-                    <a href="javascript:void(0)" title="Edit" class="data-toggle-action-tooltip btn btn-outline-success btn-circle btn-sm" @click.stop="$emit('on-show-edit', {id:'statement-modal', data: statement})">
+                    <a href="javascript:void(0)" title="Edit" class="data-toggle-action-tooltip btn btn-outline-success btn-circle btn-sm" @click.stop="$emit('show-edit', {id:'statement-modal', data: statement})">
                         <i class="sl-icon-note"></i>
                     </a>
                 </span>

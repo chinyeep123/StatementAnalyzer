@@ -28,7 +28,7 @@ class AddonServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../../resources/views', 'statement-analyzer');
         $this->publishes([
             __DIR__.'/../../resources/views' => base_path('resources/views/vendor/statement-analyzer'),
-        ]);
+        ], 'statement-analyzer');
         $this->publishes([
             __DIR__.'/../../public' => '../public/vendor/statement-analyzer',
         ], 'statement-analyzer');

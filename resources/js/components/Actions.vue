@@ -15,7 +15,7 @@
             </div>
             
             <!--TOGGLE STATS-->
-            <button type="button" data-toggle="tooltip" title="Quick Stats" class="list-actions-button btn btn-page-actions waves-effect waves-dark js-toggle-stats-widget update-user-ux-preferences" @click.stop="onShowStat">
+            <button type="button" data-toggle="tooltip" title="Quick Stats" class="list-actions-button btn btn-page-actions waves-effect waves-dark js-toggle-stats-widget update-user-ux-preferences" @click.prevent="onShowStat">
                 <i class="ti-stats-up"></i>
             </button>
             
@@ -35,7 +35,7 @@
             </button>
             
             <!--ADD NEW ITEM-->
-            <button type="button" class="btn btn-danger btn-add-circle edit-add-modal-button js-ajax-ux-request reset-target-modal-form" @click.stop="onShowCreateModal" data-project-progress="0">
+            <button type="button" class="btn btn-danger btn-add-circle edit-add-modal-button js-ajax-ux-request reset-target-modal-form" @click.prevent="onShowCreateModal" data-project-progress="0">
                 <i class="ti-plus"></i>
             </button>
             
@@ -87,13 +87,13 @@ export default {
             return _.capitalize(string);
         },
         onSearch() {
-            this.$emit('on-search', this.search);
+            this.$emit('search', this.search);
         },
         onShowStat() {
-            this.$emit('on-show-stat')
+            this.$emit('show-stat')
         },
         onShowCreateModal() {
-            this.$emit('on-show-create')
+            this.$emit('show-create')
         },
     }
 }

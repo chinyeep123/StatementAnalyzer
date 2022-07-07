@@ -76,18 +76,27 @@ class StatementRepository {
             if (request()->filled('account_number') && $data['apply_filters']) {
                 $statements->where('account_number', request('account_number'));
             }
+
+            //filters: get results without tags
+            if(request()->filled('without_tag') && $data['apply_filters']) {
+                if(request('without_tag') == true) {
+                    $statement_ids = StatementStatementTag::pluck('statement_id');
+                    $statements->whereNotIn('id', $statement_ids);
+                }
+            }
+
             //search: various client columns and relationships (where first, then wherehas)
             if (request()->filled('search_query')) {
                 $statements->where(function ($query) {
                     $query->Where('id', '=', request('search_query'));
                     if (is_numeric(request('search_query'))) {
-                        $query->orWhere('money_in', '=', request('search_query'));
-                        $query->orWhere('money_out', '=', request('search_query'));
+                        $query->orWhere('debit', '=', request('search_query'));
+                        $query->orWhere('credit', '=', request('search_query'));
                         $query->orWhere('balance', '=', request('search_query'));
                     }
                     $query->orWhere('date', '=', date('Y-m-d', strtotime(request('search_query'))));
-                    $query->orWhere('money_in_currency', '=', request('search_query'));
-                    $query->orWhere('money_out_currency', '=', request('search_query'));
+                    $query->orWhere('debit_currency', '=', request('search_query'));
+                    $query->orWhere('credit_currency', '=', request('search_query'));
                     $query->orWhere('balance_currency', '=', request('search_query'));
                     $query->orWhere('description', 'LIKE', '%' . request('search_query') . '%');
                 });
@@ -120,13 +129,13 @@ class StatementRepository {
         //stats - sum all
         if (isset($data['stats'])) {
             if(in_array($data['stats'], [
-                'sum-money_in',
+                'sum-debit',
             ])) {
-                return $statements->sum('money_in');
+                return $statements->sum('debit');
             } else if(in_array($data['stats'], [
-                'sum-money_out',
+                'sum-credit',
             ])) {
-                return $statements->sum('money_out');
+                return $statements->sum('credit');
             } else if(in_array($data['stats'], [
                 'statement_analysis_ids',
             ])) {
@@ -149,26 +158,26 @@ class StatementRepository {
                         $parent = StatementTag::findOrFail($tag->parent_id);
                         $statement = Statement::leftJoin('statement_statement_tag', 'statement_statement_tag.statement_id', '=', 'statements.id')
                                         ->where('statement_statement_tag.statement_tag_id', $tag->id)
-                                        ->selectRaw('SUM(statements.money_in) as money_in, SUM(statements.money_out) as money_out')
+                                        ->selectRaw('SUM(statements.debit) as debit, SUM(statements.credit) as credit')
                                         ->first();
                         if(!empty($arr[$parent->name])) {
-                            array_push($arr[$parent->name]['child'],
+                            array_push($arr[$parent->name]['childs'],
                             [
                                 'name' => $tag->name,
-                                'money_in' => $statement->money_in,
-                                'money_out' => $statement->money_out,
+                                'debit' => $statement->debit,
+                                'credit' => $statement->credit,
                             ]);
                         } else {
                             $arr[$parent->name] = [
                                 'name' => $parent->name,
-                                'money_in' => '',
-                                'money_out' => '',
+                                'debit' => '',
+                                'credit' => '',
                                 'balance' => '',
                                 'childs' => [
                                     [
                                         'name' => $tag->name,
-                                        'money_in' => $statement->money_in,
-                                        'money_out' => $statement->money_out,
+                                        'debit' => $statement->debit,
+                                        'credit' => $statement->credit,
                                     ]
                                 ]
                             ];
@@ -176,12 +185,12 @@ class StatementRepository {
                     } else {
                         $statement = Statement::leftJoin('statement_statement_tag', 'statement_statement_tag.statement_id', '=', 'statements.id')
                                         ->where('statement_statement_tag.statement_tag_id', $tag->id)
-                                        ->selectRaw('SUM(statements.money_in) as money_in, SUM(statements.money_out) as money_out')
+                                        ->selectRaw('SUM(statements.debit) as debit, SUM(statements.credit) as credit')
                                         ->first();
                         $arr[$tag->name] = [
                             'name' => $tag->name,
-                            'money_in' => $statement->money_in,
-                            'money_out' => $statement->money_out,
+                            'debit' => $statement->debit,
+                            'credit' => $statement->credit,
                         ];
                     }
                 }

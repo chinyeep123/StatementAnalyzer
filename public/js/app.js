@@ -2164,13 +2164,13 @@ __webpack_require__.r(__webpack_exports__);
       return lodash__WEBPACK_IMPORTED_MODULE_0___default().capitalize(string);
     },
     onSearch: function onSearch() {
-      this.$emit('on-search', this.search);
+      this.$emit('search', this.search);
     },
     onShowStat: function onShowStat() {
-      this.$emit('on-show-stat');
+      this.$emit('show-stat');
     },
     onShowCreateModal: function onShowCreateModal() {
-      this.$emit('on-show-create');
+      this.$emit('show-create');
     }
   }
 });
@@ -2188,6 +2188,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
+/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lodash */ "./node_modules/lodash/lodash.js");
+/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(lodash__WEBPACK_IMPORTED_MODULE_0__);
 //
 //
 //
@@ -2227,6 +2229,7 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   name: 'Analysis',
   props: {
@@ -2246,7 +2249,14 @@ __webpack_require__.r(__webpack_exports__);
   },
   head: {},
   computed: {},
-  methods: {}
+  methods: {
+    getSumDebit: function getSumDebit(analyzer) {
+      return analyzer.childs ? lodash__WEBPACK_IMPORTED_MODULE_0___default().sumBy(analyzer.childs, 'debit') : analyzer.debit;
+    },
+    getSumCredit: function getSumCredit(analyzer) {
+      return analyzer.childs ? lodash__WEBPACK_IMPORTED_MODULE_0___default().sumBy(analyzer.childs, 'credit') : analyzer.credit;
+    }
+  }
 });
 
 /***/ }),
@@ -2525,6 +2535,7 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   name: 'Stats',
   props: {
@@ -2575,7 +2586,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_11___default = /*#__PURE__*/__webpack_require__.n(axios__WEBPACK_IMPORTED_MODULE_11__);
 /* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! lodash */ "./node_modules/lodash/lodash.js");
 /* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_12___default = /*#__PURE__*/__webpack_require__.n(lodash__WEBPACK_IMPORTED_MODULE_12__);
-/* harmony import */ var v_select2_component__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! v-select2-component */ "./node_modules/v-select2-component/dist/Select2.esm.js");
+/* harmony import */ var vue_spinner_src_PulseLoader_vue__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! vue-spinner/src/PulseLoader.vue */ "./node_modules/vue-spinner/src/PulseLoader.vue");
+/* harmony import */ var v_select2_component__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! v-select2-component */ "./node_modules/v-select2-component/dist/Select2.esm.js");
 //
 //
 //
@@ -2789,6 +2801,28 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
 
 
 
@@ -2820,14 +2854,17 @@ __webpack_require__.r(__webpack_exports__);
     Form: _components_Form_vue__WEBPACK_IMPORTED_MODULE_6__.default,
     TableRows: _components_TableRows__WEBPACK_IMPORTED_MODULE_7__.default,
     TagTable: _TagTable_vue__WEBPACK_IMPORTED_MODULE_9__.default,
-    Select2: v_select2_component__WEBPACK_IMPORTED_MODULE_13__.default
+    PulseLoader: vue_spinner_src_PulseLoader_vue__WEBPACK_IMPORTED_MODULE_13__.default,
+    Select2: v_select2_component__WEBPACK_IMPORTED_MODULE_14__.default
   },
   head: {},
   data: function data() {
     var _this = this;
 
     return {
-      activeModal: 0,
+      activeStat: !lodash__WEBPACK_IMPORTED_MODULE_12___default().isEmpty(localStorage.getItem('show-stat')) && localStorage.getItem('show-stat') != '0' ? localStorage.getItem('show-stat') : 0,
+      activeStatementModal: 0,
+      activeTagModal: 0,
       statementModal: "statement-modal",
       tagListingModal: "tag-listing-modal",
       modalTitle: "Create Statement",
@@ -2835,6 +2872,7 @@ __webpack_require__.r(__webpack_exports__);
         category_id: "",
         search_query: "",
         tag_ids: "",
+        without_tag: 0,
         page: 1,
         last_page: 1
       },
@@ -2846,10 +2884,10 @@ __webpack_require__.r(__webpack_exports__);
         account_number: "",
         date: "",
         description: "",
-        money_in_currency: "",
-        money_in: "",
-        money_out_currency: "",
-        money_out: "",
+        debit_currency: "",
+        debit: "",
+        credit_currency: "",
+        credit: "",
         balance_currency: "",
         balance: ""
       },
@@ -2859,6 +2897,7 @@ __webpack_require__.r(__webpack_exports__);
       accountOptions: [],
       currentSortColumn: '',
       currentSortOrder: 'asc',
+      loading: false,
       errors: new _mixins_Errors__WEBPACK_IMPORTED_MODULE_10__.default(),
       ajaxAccountNumber: {
         url: "/feed/".concat(this.settings.module, "/account_numbers"),
@@ -2917,38 +2956,57 @@ __webpack_require__.r(__webpack_exports__);
     getURL: function getURL(string) {
       return "".concat(this.settings.url, "/").concat(this.settings.module).concat(string);
     },
-    show: function show(id) {
-      return this.activeModal === id;
+    showStat: function showStat(id) {
+      var stat_session = localStorage.getItem('show-stat');
+      return this.activeStat === stat_session;
     },
-    toggle: function toggle(id) {
-      if (this.activeModal !== 0) {
-        this.activeModal = 0;
+    toggleStat: function toggleStat(id) {
+      if (this.activeStat !== 0) {
+        localStorage.setItem('show-stat', 0);
+        this.activeStat = 0;
         return false;
       }
 
-      this.activeModal = id;
+      localStorage.setItem('show-stat', id);
+      this.activeStat = localStorage.getItem('show-stat');
+    },
+    showTag: function showTag(id) {
+      return this.activeTagModal === id;
+    },
+    toggleTag: function toggleTag(id) {
+      if (this.activeTagModal !== 0) {
+        this.activeTagModal = 0;
+        return false;
+      }
+
+      this.activeTagModal = id;
+    },
+    showStatement: function showStatement(id) {
+      return this.activeStatementModal === id;
     },
     toggleStatement: function toggleStatement(_ref) {
       var id = _ref.id,
           data = _ref.data;
 
-      if (this.activeModal !== 0) {
-        this.activeModal = 0;
+      if (this.activeStatementModal !== 0) {
+        this.activeStatementModal = 0;
         return false;
       }
 
       this.statement = data;
-      this.activeModal = id;
+      this.activeStatementModal = id;
     },
     initial: function initial() {
       var _this2 = this;
 
       NProgress.start();
+      this.loading = true;
       axios__WEBPACK_IMPORTED_MODULE_11___default().get("".concat(this.settings.module), {
         headers: {
           "X-Requested-With": "XMLHttpRequest"
         }
       }).then(function (response) {
+        _this2.loading = false;
         _this2.stats = response.data.stats;
         _this2.analysis = response.data.analysis;
         _this2.statements = response.data.statements.data;
@@ -3737,10 +3795,10 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         account_number: "",
         date: "",
         description: "",
-        money_in_currency: "",
-        money_in: "",
-        money_out_currency: "",
-        money_out: "",
+        debit_currency: "",
+        debit: "",
+        credit_currency: "",
+        credit: "",
         balance_currency: "",
         balance: ""
       },
@@ -3754,10 +3812,10 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         account_number: "",
         date: "",
         description: "",
-        money_in_currency: "",
-        money_in: "",
-        money_out_currency: "",
-        money_out: "",
+        debit_currency: "",
+        debit: "",
+        credit_currency: "",
+        credit: "",
         balance_currency: "",
         balance: ""
       };
@@ -4031,6 +4089,30 @@ __webpack_require__.r(__webpack_exports__);
 var ___CSS_LOADER_EXPORT___ = _css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
 ___CSS_LOADER_EXPORT___.push([module.id, ".select2-container{box-sizing:border-box;display:inline-block;margin:0;position:relative;vertical-align:middle}.select2-container .select2-selection--single{box-sizing:border-box;cursor:pointer;display:block;height:28px;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-user-select:none}.select2-container .select2-selection--single .select2-selection__rendered{display:block;padding-left:8px;padding-right:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.select2-container .select2-selection--single .select2-selection__clear{position:relative}.select2-container[dir=\"rtl\"] .select2-selection--single .select2-selection__rendered{padding-right:8px;padding-left:20px}.select2-container .select2-selection--multiple{box-sizing:border-box;cursor:pointer;display:block;min-height:32px;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-user-select:none}.select2-container .select2-selection--multiple .select2-selection__rendered{display:inline-block;overflow:hidden;padding-left:8px;text-overflow:ellipsis;white-space:nowrap}.select2-container .select2-search--inline{float:left}.select2-container .select2-search--inline .select2-search__field{box-sizing:border-box;border:none;font-size:100%;margin-top:5px;padding:0}.select2-container .select2-search--inline .select2-search__field::-webkit-search-cancel-button{-webkit-appearance:none}.select2-dropdown{background-color:white;border:1px solid #aaa;border-radius:4px;box-sizing:border-box;display:block;position:absolute;left:-100000px;width:100%;z-index:1051}.select2-results{display:block}.select2-results__options{list-style:none;margin:0;padding:0}.select2-results__option{padding:6px;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-user-select:none}.select2-results__option[aria-selected]{cursor:pointer}.select2-container--open .select2-dropdown{left:0}.select2-container--open .select2-dropdown--above{border-bottom:none;border-bottom-left-radius:0;border-bottom-right-radius:0}.select2-container--open .select2-dropdown--below{border-top:none;border-top-left-radius:0;border-top-right-radius:0}.select2-search--dropdown{display:block;padding:4px}.select2-search--dropdown .select2-search__field{padding:4px;width:100%;box-sizing:border-box}.select2-search--dropdown .select2-search__field::-webkit-search-cancel-button{-webkit-appearance:none}.select2-search--dropdown.select2-search--hide{display:none}.select2-close-mask{border:0;margin:0;padding:0;display:block;position:fixed;left:0;top:0;min-height:100%;min-width:100%;height:auto;width:auto;opacity:0;z-index:99;background-color:#fff;filter:alpha(opacity=0)}.select2-hidden-accessible{border:0 !important;clip:rect(0 0 0 0) !important;-webkit-clip-path:inset(50%) !important;clip-path:inset(50%) !important;height:1px !important;overflow:hidden !important;padding:0 !important;position:absolute !important;width:1px !important;white-space:nowrap !important}.select2-container--default .select2-selection--single{background-color:#fff;border:1px solid #aaa;border-radius:4px}.select2-container--default .select2-selection--single .select2-selection__rendered{color:#444;line-height:28px}.select2-container--default .select2-selection--single .select2-selection__clear{cursor:pointer;float:right;font-weight:bold}.select2-container--default .select2-selection--single .select2-selection__placeholder{color:#999}.select2-container--default .select2-selection--single .select2-selection__arrow{height:26px;position:absolute;top:1px;right:1px;width:20px}.select2-container--default .select2-selection--single .select2-selection__arrow b{border-color:#888 transparent transparent transparent;border-style:solid;border-width:5px 4px 0 4px;height:0;left:50%;margin-left:-4px;margin-top:-2px;position:absolute;top:50%;width:0}.select2-container--default[dir=\"rtl\"] .select2-selection--single .select2-selection__clear{float:left}.select2-container--default[dir=\"rtl\"] .select2-selection--single .select2-selection__arrow{left:1px;right:auto}.select2-container--default.select2-container--disabled .select2-selection--single{background-color:#eee;cursor:default}.select2-container--default.select2-container--disabled .select2-selection--single .select2-selection__clear{display:none}.select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b{border-color:transparent transparent #888 transparent;border-width:0 4px 5px 4px}.select2-container--default .select2-selection--multiple{background-color:white;border:1px solid #aaa;border-radius:4px;cursor:text}.select2-container--default .select2-selection--multiple .select2-selection__rendered{box-sizing:border-box;list-style:none;margin:0;padding:0 5px;width:100%}.select2-container--default .select2-selection--multiple .select2-selection__rendered li{list-style:none}.select2-container--default .select2-selection--multiple .select2-selection__clear{cursor:pointer;float:right;font-weight:bold;margin-top:5px;margin-right:10px;padding:1px}.select2-container--default .select2-selection--multiple .select2-selection__choice{background-color:#e4e4e4;border:1px solid #aaa;border-radius:4px;cursor:default;float:left;margin-right:5px;margin-top:5px;padding:0 5px}.select2-container--default .select2-selection--multiple .select2-selection__choice__remove{color:#999;cursor:pointer;display:inline-block;font-weight:bold;margin-right:2px}.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover{color:#333}.select2-container--default[dir=\"rtl\"] .select2-selection--multiple .select2-selection__choice,.select2-container--default[dir=\"rtl\"] .select2-selection--multiple .select2-search--inline{float:right}.select2-container--default[dir=\"rtl\"] .select2-selection--multiple .select2-selection__choice{margin-left:5px;margin-right:auto}.select2-container--default[dir=\"rtl\"] .select2-selection--multiple .select2-selection__choice__remove{margin-left:2px;margin-right:auto}.select2-container--default.select2-container--focus .select2-selection--multiple{border:solid black 1px;outline:0}.select2-container--default.select2-container--disabled .select2-selection--multiple{background-color:#eee;cursor:default}.select2-container--default.select2-container--disabled .select2-selection__choice__remove{display:none}.select2-container--default.select2-container--open.select2-container--above .select2-selection--single,.select2-container--default.select2-container--open.select2-container--above .select2-selection--multiple{border-top-left-radius:0;border-top-right-radius:0}.select2-container--default.select2-container--open.select2-container--below .select2-selection--single,.select2-container--default.select2-container--open.select2-container--below .select2-selection--multiple{border-bottom-left-radius:0;border-bottom-right-radius:0}.select2-container--default .select2-search--dropdown .select2-search__field{border:1px solid #aaa}.select2-container--default .select2-search--inline .select2-search__field{background:transparent;border:none;outline:0;box-shadow:none;-webkit-appearance:textfield}.select2-container--default .select2-results>.select2-results__options{max-height:200px;overflow-y:auto}.select2-container--default .select2-results__option[role=group]{padding:0}.select2-container--default .select2-results__option[aria-disabled=true]{color:#999}.select2-container--default .select2-results__option[aria-selected=true]{background-color:#ddd}.select2-container--default .select2-results__option .select2-results__option{padding-left:1em}.select2-container--default .select2-results__option .select2-results__option .select2-results__group{padding-left:0}.select2-container--default .select2-results__option .select2-results__option .select2-results__option{margin-left:-1em;padding-left:2em}.select2-container--default .select2-results__option .select2-results__option .select2-results__option .select2-results__option{margin-left:-2em;padding-left:3em}.select2-container--default .select2-results__option .select2-results__option .select2-results__option .select2-results__option .select2-results__option{margin-left:-3em;padding-left:4em}.select2-container--default .select2-results__option .select2-results__option .select2-results__option .select2-results__option .select2-results__option .select2-results__option{margin-left:-4em;padding-left:5em}.select2-container--default .select2-results__option .select2-results__option .select2-results__option .select2-results__option .select2-results__option .select2-results__option .select2-results__option{margin-left:-5em;padding-left:6em}.select2-container--default .select2-results__option--highlighted[aria-selected]{background-color:#5897fb;color:white}.select2-container--default .select2-results__group{cursor:default;display:block;padding:6px}.select2-container--classic .select2-selection--single{background-color:#f7f7f7;border:1px solid #aaa;border-radius:4px;outline:0;background-image:linear-gradient(to bottom, #fff 50%, #eee 100%);background-repeat:repeat-x;filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#FFFFFFFF', endColorstr='#FFEEEEEE', GradientType=0)}.select2-container--classic .select2-selection--single:focus{border:1px solid #5897fb}.select2-container--classic .select2-selection--single .select2-selection__rendered{color:#444;line-height:28px}.select2-container--classic .select2-selection--single .select2-selection__clear{cursor:pointer;float:right;font-weight:bold;margin-right:10px}.select2-container--classic .select2-selection--single .select2-selection__placeholder{color:#999}.select2-container--classic .select2-selection--single .select2-selection__arrow{background-color:#ddd;border:none;border-left:1px solid #aaa;border-top-right-radius:4px;border-bottom-right-radius:4px;height:26px;position:absolute;top:1px;right:1px;width:20px;background-image:linear-gradient(to bottom, #eee 50%, #ccc 100%);background-repeat:repeat-x;filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#FFEEEEEE', endColorstr='#FFCCCCCC', GradientType=0)}.select2-container--classic .select2-selection--single .select2-selection__arrow b{border-color:#888 transparent transparent transparent;border-style:solid;border-width:5px 4px 0 4px;height:0;left:50%;margin-left:-4px;margin-top:-2px;position:absolute;top:50%;width:0}.select2-container--classic[dir=\"rtl\"] .select2-selection--single .select2-selection__clear{float:left}.select2-container--classic[dir=\"rtl\"] .select2-selection--single .select2-selection__arrow{border:none;border-right:1px solid #aaa;border-radius:0;border-top-left-radius:4px;border-bottom-left-radius:4px;left:1px;right:auto}.select2-container--classic.select2-container--open .select2-selection--single{border:1px solid #5897fb}.select2-container--classic.select2-container--open .select2-selection--single .select2-selection__arrow{background:transparent;border:none}.select2-container--classic.select2-container--open .select2-selection--single .select2-selection__arrow b{border-color:transparent transparent #888 transparent;border-width:0 4px 5px 4px}.select2-container--classic.select2-container--open.select2-container--above .select2-selection--single{border-top:none;border-top-left-radius:0;border-top-right-radius:0;background-image:linear-gradient(to bottom, #fff 0%, #eee 50%);background-repeat:repeat-x;filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#FFFFFFFF', endColorstr='#FFEEEEEE', GradientType=0)}.select2-container--classic.select2-container--open.select2-container--below .select2-selection--single{border-bottom:none;border-bottom-left-radius:0;border-bottom-right-radius:0;background-image:linear-gradient(to bottom, #eee 50%, #fff 100%);background-repeat:repeat-x;filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#FFEEEEEE', endColorstr='#FFFFFFFF', GradientType=0)}.select2-container--classic .select2-selection--multiple{background-color:white;border:1px solid #aaa;border-radius:4px;cursor:text;outline:0}.select2-container--classic .select2-selection--multiple:focus{border:1px solid #5897fb}.select2-container--classic .select2-selection--multiple .select2-selection__rendered{list-style:none;margin:0;padding:0 5px}.select2-container--classic .select2-selection--multiple .select2-selection__clear{display:none}.select2-container--classic .select2-selection--multiple .select2-selection__choice{background-color:#e4e4e4;border:1px solid #aaa;border-radius:4px;cursor:default;float:left;margin-right:5px;margin-top:5px;padding:0 5px}.select2-container--classic .select2-selection--multiple .select2-selection__choice__remove{color:#888;cursor:pointer;display:inline-block;font-weight:bold;margin-right:2px}.select2-container--classic .select2-selection--multiple .select2-selection__choice__remove:hover{color:#555}.select2-container--classic[dir=\"rtl\"] .select2-selection--multiple .select2-selection__choice{float:right;margin-left:5px;margin-right:auto}.select2-container--classic[dir=\"rtl\"] .select2-selection--multiple .select2-selection__choice__remove{margin-left:2px;margin-right:auto}.select2-container--classic.select2-container--open .select2-selection--multiple{border:1px solid #5897fb}.select2-container--classic.select2-container--open.select2-container--above .select2-selection--multiple{border-top:none;border-top-left-radius:0;border-top-right-radius:0}.select2-container--classic.select2-container--open.select2-container--below .select2-selection--multiple{border-bottom:none;border-bottom-left-radius:0;border-bottom-right-radius:0}.select2-container--classic .select2-search--dropdown .select2-search__field{border:1px solid #aaa;outline:0}.select2-container--classic .select2-search--inline .select2-search__field{outline:0;box-shadow:none}.select2-container--classic .select2-dropdown{background-color:#fff;border:1px solid transparent}.select2-container--classic .select2-dropdown--above{border-bottom:none}.select2-container--classic .select2-dropdown--below{border-top:none}.select2-container--classic .select2-results>.select2-results__options{max-height:200px;overflow-y:auto}.select2-container--classic .select2-results__option[role=group]{padding:0}.select2-container--classic .select2-results__option[aria-disabled=true]{color:grey}.select2-container--classic .select2-results__option--highlighted[aria-selected]{background-color:#3875d7;color:#fff}.select2-container--classic .select2-results__group{cursor:default;display:block;padding:6px}.select2-container--classic.select2-container--open .select2-dropdown{border-color:#5897fb}\n", ""]);
+// Exports
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
+
+
+/***/ }),
+
+/***/ "./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[1]!./node_modules/vue-loader/lib/loaders/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[2]!./node_modules/vue-loader/lib/index.js??vue-loader-options!./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=style&index=0&lang=css&":
+/*!*******************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[1]!./node_modules/vue-loader/lib/loaders/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[2]!./node_modules/vue-loader/lib/index.js??vue-loader-options!./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=style&index=0&lang=css& ***!
+  \*******************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../css-loader/dist/runtime/api.js */ "./node_modules/css-loader/dist/runtime/api.js");
+/* harmony import */ var _css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0__);
+// Imports
+
+var ___CSS_LOADER_EXPORT___ = _css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
+// Module
+___CSS_LOADER_EXPORT___.push([module.id, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n/*.v-spinner\n{\n    margin: 100px auto;\n    text-align: center;\n}\n*/\n@-webkit-keyframes v-pulseStretchDelay\n{\n0%,\n    80%\n    {\n        transform: scale(1);\n        -webkit-opacity: 1;             \n                opacity: 1;\n}\n45%\n    {\n        transform: scale(0.1);\n        -webkit-opacity: 0.7;             \n                opacity: 0.7;\n}\n}\n@keyframes v-pulseStretchDelay\n{\n0%,\n    80%\n    {\n        transform: scale(1);\n        -webkit-opacity: 1;             \n                opacity: 1;\n}\n45%\n    {\n        transform: scale(0.1);\n        -webkit-opacity: 0.7;             \n                opacity: 0.7;\n}\n}\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -39069,6 +39151,36 @@ var update = _style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMP
 
 /***/ }),
 
+/***/ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[1]!./node_modules/vue-loader/lib/loaders/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[2]!./node_modules/vue-loader/lib/index.js??vue-loader-options!./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=style&index=0&lang=css&":
+/*!***********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[1]!./node_modules/vue-loader/lib/loaders/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[2]!./node_modules/vue-loader/lib/index.js??vue-loader-options!./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=style&index=0&lang=css& ***!
+  \***********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! !../../style-loader/dist/runtime/injectStylesIntoStyleTag.js */ "./node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js");
+/* harmony import */ var _style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _css_loader_dist_cjs_js_clonedRuleSet_9_0_rules_0_use_1_vue_loader_lib_loaders_stylePostLoader_js_postcss_loader_dist_cjs_js_clonedRuleSet_9_0_rules_0_use_2_vue_loader_lib_index_js_vue_loader_options_PulseLoader_vue_vue_type_style_index_0_lang_css___WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! !!../../css-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[1]!../../vue-loader/lib/loaders/stylePostLoader.js!../../postcss-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[2]!../../vue-loader/lib/index.js??vue-loader-options!./PulseLoader.vue?vue&type=style&index=0&lang=css& */ "./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[1]!./node_modules/vue-loader/lib/loaders/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[2]!./node_modules/vue-loader/lib/index.js??vue-loader-options!./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=style&index=0&lang=css&");
+
+            
+
+var options = {};
+
+options.insert = "head";
+options.singleton = false;
+
+var update = _style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0___default()(_css_loader_dist_cjs_js_clonedRuleSet_9_0_rules_0_use_1_vue_loader_lib_loaders_stylePostLoader_js_postcss_loader_dist_cjs_js_clonedRuleSet_9_0_rules_0_use_2_vue_loader_lib_index_js_vue_loader_options_PulseLoader_vue_vue_type_style_index_0_lang_css___WEBPACK_IMPORTED_MODULE_1__.default, options);
+
+
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (_css_loader_dist_cjs_js_clonedRuleSet_9_0_rules_0_use_1_vue_loader_lib_loaders_stylePostLoader_js_postcss_loader_dist_cjs_js_clonedRuleSet_9_0_rules_0_use_2_vue_loader_lib_index_js_vue_loader_options_PulseLoader_vue_vue_type_style_index_0_lang_css___WEBPACK_IMPORTED_MODULE_1__.default.locals || {});
+
+/***/ }),
+
 /***/ "./node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js":
 /*!****************************************************************************!*\
   !*** ./node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js ***!
@@ -39366,6 +39478,126 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var select2_dist_js_select2_full__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(select2_dist_js_select2_full__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var select2_dist_css_select2_min_css__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! select2/dist/css/select2.min.css */ "./node_modules/select2/dist/css/select2.min.css");
 function t(e,t,n){return t in e?Object.defineProperty(e,t,{value:n,enumerable:!0,configurable:!0,writable:!0}):e[t]=n,e}function n(e,t){var n=Object.keys(e);if(Object.getOwnPropertySymbols){var r=Object.getOwnPropertySymbols(e);t&&(r=r.filter(function(t){return Object.getOwnPropertyDescriptor(e,t).enumerable})),n.push.apply(n,r)}return n}function r(e){for(var r=1;r<arguments.length;r++){var o=null!=arguments[r]?arguments[r]:{};r%2?n(Object(o),!0).forEach(function(n){t(e,n,o[n])}):Object.getOwnPropertyDescriptors?Object.defineProperties(e,Object.getOwnPropertyDescriptors(o)):n(Object(o)).forEach(function(t){Object.defineProperty(e,t,Object.getOwnPropertyDescriptor(o,t))})}return e}function o(e){return function(e){if(Array.isArray(e))return i(e)}(e)||function(e){if("undefined"!=typeof Symbol&&Symbol.iterator in Object(e))return Array.from(e)}(e)||function(e,t){if(!e)return;if("string"==typeof e)return i(e,t);var n=Object.prototype.toString.call(e).slice(8,-1);"Object"===n&&e.constructor&&(n=e.constructor.name);if("Map"===n||"Set"===n)return Array.from(e);if("Arguments"===n||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n))return i(e,t)}(e)||function(){throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}()}function i(e,t){(null==t||t>e.length)&&(t=e.length);for(var n=0,r=new Array(t);n<t;n++)r[n]=e[n];return r}function s(e,t,n,r,o,i,s,c,l,a){"boolean"!=typeof s&&(l=c,c=s,s=!1);const u="function"==typeof n?n.options:n;let f;if(e&&e.render&&(u.render=e.render,u.staticRenderFns=e.staticRenderFns,u._compiled=!0,o&&(u.functional=!0)),r&&(u._scopeId=r),i?(f=function(e){(e=e||this.$vnode&&this.$vnode.ssrContext||this.parent&&this.parent.$vnode&&this.parent.$vnode.ssrContext)||"undefined"==typeof __VUE_SSR_CONTEXT__||(e=__VUE_SSR_CONTEXT__),t&&t.call(this,l(e)),e&&e._registeredComponents&&e._registeredComponents.add(i)},u._ssrRegister=f):t&&(f=s?function(e){t.call(this,a(e,this.$root.$options.shadowRoot))}:function(e){t.call(this,c(e))}),f)if(u.functional){const e=u.render;u.render=function(t,n){return f.call(n),e(t,n)}}else{const e=u.beforeCreate;u.beforeCreate=e?[].concat(e,f):[f]}return n}const c=s({render:function(){var e=this.$createElement,t=this._self._c||e;return t("div",[t("select",{staticClass:"form-control",attrs:{id:this.id,name:this.name,disabled:this.disabled,required:this.required}})])},staticRenderFns:[]},void 0,{name:"Select2",data:function(){return{select2:null}},model:{event:"change",prop:"value"},props:{id:{type:String,default:""},name:{type:String,default:""},placeholder:{type:String,default:""},options:{type:Array,default:function(){return[]}},disabled:{type:Boolean,default:!1},required:{type:Boolean,default:!1},settings:{type:Object,default:function(){}},value:null},watch:{options:function(e){this.setOption(e)},value:function(e){this.setValue(e)}},methods:{setOption:function(){var e=arguments.length>0&&void 0!==arguments[0]?arguments[0]:[];this.select2.empty(),this.select2.select2(r(r({placeholder:this.placeholder},this.settings),{},{data:e})),this.setValue(this.value)},setValue:function(e){e instanceof Array?this.select2.val(o(e)):this.select2.val([e]),this.select2.trigger("change")}},mounted:function(){var t=this;this.select2=jquery__WEBPACK_IMPORTED_MODULE_0___default()(this.$el).find("select").select2(r(r({placeholder:this.placeholder},this.settings),{},{data:this.options})).on("select2:select select2:unselect",function(e){t.$emit("change",t.select2.val()),t.$emit("select",e.params.data)}).on("select2:closing",function(e){t.$emit("closing",e)}).on("select2:close",function(e){t.$emit("close",e)}).on("select2:opening",function(e){t.$emit("opening",e)}).on("select2:open",function(e){t.$emit("open",e)}).on("select2:clearing",function(e){t.$emit("clearing",e)}).on("select2:clear",function(e){t.$emit("clear",e)}),this.setValue(this.value)},beforeDestroy:function(){this.select2.select2("destroy")}},void 0,!1,void 0,!1,void 0,void 0,void 0);function l(e){l.installed||(l.installed=!0,e.component("MyComponent",c))}var a={install:l},u=null;"undefined"!=typeof window?u=window.Vue:"undefined"!=typeof __webpack_require__.g&&(u=__webpack_require__.g.Vue),u&&u.use(a);/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (c);
+
+
+/***/ }),
+
+/***/ "./node_modules/vue-spinner/src/PulseLoader.vue":
+/*!******************************************************!*\
+  !*** ./node_modules/vue-spinner/src/PulseLoader.vue ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _PulseLoader_vue_vue_type_template_id_bc13a466___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./PulseLoader.vue?vue&type=template&id=bc13a466& */ "./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=template&id=bc13a466&");
+/* harmony import */ var _PulseLoader_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./PulseLoader.vue?vue&type=script&lang=js& */ "./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=script&lang=js&");
+/* harmony import */ var _PulseLoader_vue_vue_type_style_index_0_lang_css___WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./PulseLoader.vue?vue&type=style&index=0&lang=css& */ "./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=style&index=0&lang=css&");
+/* harmony import */ var _vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! !../../vue-loader/lib/runtime/componentNormalizer.js */ "./node_modules/vue-loader/lib/runtime/componentNormalizer.js");
+
+
+
+;
+
+
+/* normalize component */
+
+var component = (0,_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_3__.default)(
+  _PulseLoader_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__.default,
+  _PulseLoader_vue_vue_type_template_id_bc13a466___WEBPACK_IMPORTED_MODULE_0__.render,
+  _PulseLoader_vue_vue_type_template_id_bc13a466___WEBPACK_IMPORTED_MODULE_0__.staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* hot reload */
+if (false) { var api; }
+component.options.__file = "node_modules/vue-spinner/src/PulseLoader.vue"
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (component.exports);
+
+/***/ }),
+
+/***/ "./node_modules/vue-loader/lib/index.js??vue-loader-options!./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=script&lang=js&":
+/*!******************************************************************************************************************************************!*\
+  !*** ./node_modules/vue-loader/lib/index.js??vue-loader-options!./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=script&lang=js& ***!
+  \******************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
+  
+  name: 'PulseLoader',
+
+  props: {
+    loading: {
+      type: Boolean,
+      default: true
+    },
+    color: { 
+      type: String,
+      default: '#5dc596'
+    },
+    size: {
+      type: String,
+      default: '15px'
+    },
+    margin: {
+      type: String,
+      default: '2px'
+    },
+    radius: {
+      type: String,
+      default: '100%'
+    }
+  },
+  data () {
+    return {
+      spinnerStyle: {
+      	backgroundColor: this.color,
+      	width: this.size,
+        height: this.size,
+      	margin: this.margin,
+      	borderRadius: this.radius,
+        display: 'inline-block',
+        animationName: 'v-pulseStretchDelay',
+        animationDuration: '0.75s',
+        animationIterationCount: 'infinite',
+        animationTimingFunction: 'cubic-bezier(.2,.68,.18,1.08)',
+        animationFillMode: 'both'
+      },
+      spinnerDelay1: {
+        animationDelay: '0.12s'
+      },
+      spinnerDelay2: {
+        animationDelay: '0.24s'
+      },
+      spinnerDelay3: {
+        animationDelay: '0.36s'
+      }
+    }
+  }
+
+});
 
 
 /***/ }),
@@ -40030,6 +40262,52 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=style&index=0&lang=css&":
+/*!***************************************************************************************!*\
+  !*** ./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=style&index=0&lang=css& ***!
+  \***************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _style_loader_dist_cjs_js_css_loader_dist_cjs_js_clonedRuleSet_9_0_rules_0_use_1_vue_loader_lib_loaders_stylePostLoader_js_postcss_loader_dist_cjs_js_clonedRuleSet_9_0_rules_0_use_2_vue_loader_lib_index_js_vue_loader_options_PulseLoader_vue_vue_type_style_index_0_lang_css___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../style-loader/dist/cjs.js!../../css-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[1]!../../vue-loader/lib/loaders/stylePostLoader.js!../../postcss-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[2]!../../vue-loader/lib/index.js??vue-loader-options!./PulseLoader.vue?vue&type=style&index=0&lang=css& */ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[1]!./node_modules/vue-loader/lib/loaders/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9[0].rules[0].use[2]!./node_modules/vue-loader/lib/index.js??vue-loader-options!./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=style&index=0&lang=css&");
+
+
+/***/ }),
+
+/***/ "./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=script&lang=js&":
+/*!*******************************************************************************!*\
+  !*** ./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=script&lang=js& ***!
+  \*******************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _vue_loader_lib_index_js_vue_loader_options_PulseLoader_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../vue-loader/lib/index.js??vue-loader-options!./PulseLoader.vue?vue&type=script&lang=js& */ "./node_modules/vue-loader/lib/index.js??vue-loader-options!./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=script&lang=js&");
+ /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (_vue_loader_lib_index_js_vue_loader_options_PulseLoader_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__.default); 
+
+/***/ }),
+
+/***/ "./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=template&id=bc13a466&":
+/*!*************************************************************************************!*\
+  !*** ./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=template&id=bc13a466& ***!
+  \*************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* reexport safe */ _vue_loader_lib_loaders_templateLoader_js_vue_loader_options_vue_loader_lib_index_js_vue_loader_options_PulseLoader_vue_vue_type_template_id_bc13a466___WEBPACK_IMPORTED_MODULE_0__.render),
+/* harmony export */   "staticRenderFns": () => (/* reexport safe */ _vue_loader_lib_loaders_templateLoader_js_vue_loader_options_vue_loader_lib_index_js_vue_loader_options_PulseLoader_vue_vue_type_template_id_bc13a466___WEBPACK_IMPORTED_MODULE_0__.staticRenderFns)
+/* harmony export */ });
+/* harmony import */ var _vue_loader_lib_loaders_templateLoader_js_vue_loader_options_vue_loader_lib_index_js_vue_loader_options_PulseLoader_vue_vue_type_template_id_bc13a466___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../vue-loader/lib/loaders/templateLoader.js??vue-loader-options!../../vue-loader/lib/index.js??vue-loader-options!./PulseLoader.vue?vue&type=template&id=bc13a466& */ "./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/vue-loader/lib/index.js??vue-loader-options!./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=template&id=bc13a466&");
+
+
+/***/ }),
+
 /***/ "./resources/js/components/Actions.vue?vue&type=template&id=36eeabe2&":
 /*!****************************************************************************!*\
   !*** ./resources/js/components/Actions.vue?vue&type=template&id=36eeabe2& ***!
@@ -40234,6 +40512,58 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/vue-loader/lib/index.js??vue-loader-options!./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=template&id=bc13a466&":
+/*!****************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/vue-loader/lib/index.js??vue-loader-options!./node_modules/vue-spinner/src/PulseLoader.vue?vue&type=template&id=bc13a466& ***!
+  \****************************************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render),
+/* harmony export */   "staticRenderFns": () => (/* binding */ staticRenderFns)
+/* harmony export */ });
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _c(
+    "div",
+    {
+      directives: [
+        {
+          name: "show",
+          rawName: "v-show",
+          value: _vm.loading,
+          expression: "loading"
+        }
+      ],
+      staticClass: "v-spinner"
+    },
+    [
+      _c("div", {
+        staticClass: "v-pulse v-pulse1",
+        style: [_vm.spinnerStyle, _vm.spinnerDelay1]
+      }),
+      _c("div", {
+        staticClass: "v-pulse v-pulse2",
+        style: [_vm.spinnerStyle, _vm.spinnerDelay2]
+      }),
+      _c("div", {
+        staticClass: "v-pulse v-pulse3",
+        style: [_vm.spinnerStyle, _vm.spinnerDelay3]
+      })
+    ]
+  )
+}
+var staticRenderFns = []
+render._withStripped = true
+
+
+
+/***/ }),
+
 /***/ "./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/vue-loader/lib/index.js??vue-loader-options!./resources/js/components/Actions.vue?vue&type=template&id=36eeabe2&":
 /*!*******************************************************************************************************************************************************************************************************************!*\
   !*** ./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/vue-loader/lib/index.js??vue-loader-options!./resources/js/components/Actions.vue?vue&type=template&id=36eeabe2& ***!
@@ -40309,7 +40639,7 @@ var render = function() {
               },
               on: {
                 click: function($event) {
-                  $event.stopPropagation()
+                  $event.preventDefault()
                   return _vm.onShowStat.apply(null, arguments)
                 }
               }
@@ -40364,7 +40694,7 @@ var render = function() {
               attrs: { type: "button", "data-project-progress": "0" },
               on: {
                 click: function($event) {
-                  $event.stopPropagation()
+                  $event.preventDefault()
                   return _vm.onShowCreateModal.apply(null, arguments)
                 }
               }
@@ -40438,9 +40768,13 @@ var render = function() {
                                   _vm._v(_vm._s(analyzer.name))
                                 ]),
                                 _vm._v(" "),
-                                _c("td", [_vm._v(_vm._s(analyzer.money_in))]),
+                                _c("td", [
+                                  _vm._v(_vm._s(_vm.getSumDebit(analyzer)))
+                                ]),
                                 _vm._v(" "),
-                                _c("td", [_vm._v(_vm._s(analyzer.money_out))])
+                                _c("td", [
+                                  _vm._v(_vm._s(_vm.getSumCredit(analyzer)))
+                                ])
                               ]),
                               _vm._v(" "),
                               _vm._l(analyzer.childs, function(child, index1) {
@@ -40456,9 +40790,9 @@ var render = function() {
                                       _vm._v("- " + _vm._s(child.name))
                                     ]),
                                     _vm._v(" "),
-                                    _c("td", [_vm._v(_vm._s(child.money_in))]),
+                                    _c("td", [_vm._v(_vm._s(child.debit))]),
                                     _vm._v(" "),
-                                    _c("td", [_vm._v(_vm._s(child.money_out))])
+                                    _c("td", [_vm._v(_vm._s(child.credit))])
                                   ]
                                 )
                               })
@@ -40665,7 +40999,7 @@ var render = function() {
                       on: {
                         click: function($event) {
                           $event.preventDefault()
-                          return _vm.$emit("on-submit")
+                          return _vm.$emit("submit")
                         }
                       }
                     },
@@ -40952,11 +41286,11 @@ var render = function() {
               searchQuery: _vm.filter_params.search_query
             },
             on: {
-              "on-search": _vm.search,
-              "on-show-stat": function($event) {
-                return _vm.toggle("stat")
+              search: _vm.search,
+              "show-stat": function($event) {
+                return _vm.toggleStat("stat")
               },
-              "on-show-create": function($event) {
+              "show-create": function($event) {
                 return _vm.toggleStatement({ id: _vm.statementModal, data: {} })
               }
             },
@@ -40973,7 +41307,7 @@ var render = function() {
                         on: {
                           click: function($event) {
                             $event.stopPropagation()
-                            return _vm.toggle(_vm.tagListingModal)
+                            return _vm.toggleTag(_vm.tagListingModal)
                           }
                         }
                       },
@@ -40994,7 +41328,7 @@ var render = function() {
             attrs: {
               moduleName: this.settings.module,
               stats: _vm.stats,
-              show: _vm.show("stat")
+              show: _vm.showStat("stat")
             }
           })
         : _vm._e(),
@@ -41004,568 +41338,616 @@ var render = function() {
             attrs: {
               moduleName: this.settings.module,
               analysis: _vm.analysis,
-              show: _vm.show("stat")
+              show: _vm.showStat("stat")
             }
           })
         : _vm._e(),
       _vm._v(" "),
       _c("div", { staticClass: "row" }, [
-        _c("div", { staticClass: "col-12" }, [
-          _c(
-            "div",
-            {
-              staticClass:
-                "col-12 align-self-center hidden checkbox-actions  box-shadow-minimum",
-              attrs: {
-                id: this.settings.module + "-checkbox-actions-container"
-              }
-            },
-            [
-              this.settings.is_team
-                ? _c("div", { staticClass: "x-buttons" }, [
-                    _c(
-                      "button",
-                      {
-                        staticClass:
-                          "btn btn-sm btn-default waves-effect waves-dark confirm-action-danger",
-                        attrs: {
-                          type: "button",
-                          "data-type": "form",
-                          "data-ajax-type": "POST",
-                          "data-form-id": this.settings.module + "-list-table",
-                          "data-url": _vm.getURL("/delete?type=bulk"),
-                          "data-confirm-title": "Delete Selected Items",
-                          "data-confirm-text": "Are you sure?",
-                          id: "checkbox-actions-delete-" + this.settings.module
-                        }
-                      },
-                      [
-                        _c("i", { staticClass: "sl-icon-trash" }),
-                        _vm._v(" Delete\r\n                    ")
-                      ]
-                    )
-                  ])
-                : _c("div", { staticClass: "x-notice" }, [
-                    _vm._v(
-                      "\r\n                    No actions are available\r\n                "
-                    )
-                  ])
-            ]
-          ),
-          _vm._v(" "),
-          _c(
-            "div",
-            {
-              class: "card count-" + _vm.statements.length,
-              attrs: { id: this.settings.module + "-table-wrapper" }
-            },
-            [
-              _c(
-                "div",
-                { staticClass: "card-body" },
-                [
-                  !_vm.statements.length
-                    ? _c("not-found")
-                    : _c(
-                        "div",
+        _c(
+          "div",
+          { staticClass: "col-12" },
+          [
+            _c(
+              "div",
+              {
+                staticClass:
+                  "col-12 align-self-center hidden checkbox-actions  box-shadow-minimum",
+                attrs: {
+                  id: this.settings.module + "-checkbox-actions-container"
+                }
+              },
+              [
+                this.settings.is_team
+                  ? _c("div", { staticClass: "x-buttons" }, [
+                      _c(
+                        "button",
                         {
                           staticClass:
-                            "table-responsive list-table-wrapper min-h-400"
+                            "btn btn-sm btn-default waves-effect waves-dark confirm-action-danger",
+                          attrs: {
+                            type: "button",
+                            "data-type": "form",
+                            "data-ajax-type": "POST",
+                            "data-form-id":
+                              this.settings.module + "-list-table",
+                            "data-url": _vm.getURL("/delete?type=bulk"),
+                            "data-confirm-title": "Delete Selected Items",
+                            "data-confirm-text": "Are you sure?",
+                            id:
+                              "checkbox-actions-delete-" + this.settings.module
+                          }
                         },
                         [
-                          _c(
-                            "table",
-                            {
-                              staticClass:
-                                "table m-t-0 m-b-0 table-hover no-wrap contact-list",
-                              attrs: {
-                                id: this.settings.module + "-list-table",
-                                "data-page-size": "10"
-                              }
-                            },
-                            [
-                              _c("thead", [
-                                _c("tr", [
-                                  _c(
-                                    "th",
-                                    { staticClass: "list-checkbox-wrapper" },
-                                    [
-                                      _c(
-                                        "span",
-                                        {
-                                          staticClass:
-                                            "list-checkboxes display-inline-block w-px-20"
-                                        },
-                                        [
-                                          _c("input", {
-                                            staticClass:
-                                              "listcheckbox-all filled-in chk-col-light-blue",
-                                            attrs: {
-                                              type: "checkbox",
-                                              id:
-                                                "listcheckbox-" +
-                                                this.settings.module,
-                                              name:
-                                                "listcheckbox-" +
-                                                this.settings.module,
-                                              "data-actions-container-class":
-                                                this.settings.module +
-                                                "-checkbox-actions-container",
-                                              "data-children-checkbox-class":
-                                                "listcheckbox-" +
-                                                this.settings.module
-                                            }
-                                          }),
-                                          _vm._v(" "),
-                                          _c("label", {
-                                            attrs: {
-                                              for:
-                                                "listcheckbox-" +
-                                                this.settings.module
-                                            }
-                                          })
-                                        ]
-                                      )
-                                    ]
-                                  ),
-                                  _vm._v(" "),
-                                  _c(
-                                    "th",
-                                    {
-                                      class:
-                                        this.settings.module +
-                                        "_col_account_number"
-                                    },
-                                    [
-                                      _c(
-                                        "a",
-                                        {
-                                          attrs: {
-                                            id: "sort_account_number",
-                                            href: "javascript:void(0)"
-                                          },
-                                          on: {
-                                            click: function($event) {
-                                              $event.preventDefault()
-                                              return _vm.sortBy(
-                                                "account_number"
-                                              )
-                                            }
-                                          }
-                                        },
-                                        [
-                                          _vm._v("Account Number"),
-                                          _c(
-                                            "span",
-                                            { staticClass: "sorting-icons" },
-                                            [
-                                              _c("i", {
-                                                staticClass:
-                                                  "ti-arrows-vertical"
-                                              })
-                                            ]
-                                          )
-                                        ]
-                                      )
-                                    ]
-                                  ),
-                                  _vm._v(" "),
-                                  _c(
-                                    "th",
-                                    {
-                                      class: this.settings.module + "_col_date"
-                                    },
-                                    [
-                                      _c(
-                                        "a",
-                                        {
-                                          attrs: {
-                                            id: "sort_date",
-                                            href: "javascript:void(0)"
-                                          },
-                                          on: {
-                                            click: function($event) {
-                                              $event.preventDefault()
-                                              return _vm.sortBy("date")
-                                            }
-                                          }
-                                        },
-                                        [
-                                          _vm._v("Date"),
-                                          _c(
-                                            "span",
-                                            { staticClass: "sorting-icons" },
-                                            [
-                                              _c("i", {
-                                                staticClass:
-                                                  "ti-arrows-vertical"
-                                              })
-                                            ]
-                                          )
-                                        ]
-                                      )
-                                    ]
-                                  ),
-                                  _vm._v(" "),
-                                  _c(
-                                    "th",
-                                    {
-                                      class:
-                                        this.settings.module +
-                                        "_col_description"
-                                    },
-                                    [
-                                      _c(
-                                        "a",
-                                        {
-                                          attrs: {
-                                            id: "sort_description",
-                                            href: "javascript:void(0)"
-                                          },
-                                          on: {
-                                            click: function($event) {
-                                              $event.preventDefault()
-                                              return _vm.sortBy("description")
-                                            }
-                                          }
-                                        },
-                                        [
-                                          _vm._v("Description"),
-                                          _c(
-                                            "span",
-                                            { staticClass: "sorting-icons" },
-                                            [
-                                              _c("i", {
-                                                staticClass:
-                                                  "ti-arrows-vertical"
-                                              })
-                                            ]
-                                          )
-                                        ]
-                                      )
-                                    ]
-                                  ),
-                                  _vm._v(" "),
-                                  _c(
-                                    "th",
-                                    {
-                                      class:
-                                        this.settings.module +
-                                        "_col_money_in_currency"
-                                    },
-                                    [
-                                      _c(
-                                        "a",
-                                        {
-                                          attrs: {
-                                            id: "sort_money_in_currency",
-                                            href: "javascript:void(0)"
-                                          },
-                                          on: {
-                                            click: function($event) {
-                                              $event.preventDefault()
-                                              return _vm.sortBy(
-                                                "money_in_currency"
-                                              )
-                                            }
-                                          }
-                                        },
-                                        [
-                                          _vm._v("Currency"),
-                                          _c(
-                                            "span",
-                                            { staticClass: "sorting-icons" },
-                                            [
-                                              _c("i", {
-                                                staticClass:
-                                                  "ti-arrows-vertical"
-                                              })
-                                            ]
-                                          )
-                                        ]
-                                      )
-                                    ]
-                                  ),
-                                  _vm._v(" "),
-                                  _c(
-                                    "th",
-                                    {
-                                      class:
-                                        this.settings.module + "_col_money_in"
-                                    },
-                                    [
-                                      _c(
-                                        "a",
-                                        {
-                                          attrs: {
-                                            id: "sort_money_in",
-                                            href: "javascript:void(0)"
-                                          },
-                                          on: {
-                                            click: function($event) {
-                                              $event.preventDefault()
-                                              return _vm.sortBy("money_in")
-                                            }
-                                          }
-                                        },
-                                        [
-                                          _vm._v("Money In"),
-                                          _c(
-                                            "span",
-                                            { staticClass: "sorting-icons" },
-                                            [
-                                              _c("i", {
-                                                staticClass:
-                                                  "ti-arrows-vertical"
-                                              })
-                                            ]
-                                          )
-                                        ]
-                                      )
-                                    ]
-                                  ),
-                                  _vm._v(" "),
-                                  _c(
-                                    "th",
-                                    {
-                                      class:
-                                        this.settings.module +
-                                        "_col_money_out_currency"
-                                    },
-                                    [
-                                      _c(
-                                        "a",
-                                        {
-                                          attrs: {
-                                            id: "sort_money_out_currency",
-                                            href: "javascript:void(0)"
-                                          },
-                                          on: {
-                                            click: function($event) {
-                                              $event.preventDefault()
-                                              return _vm.sortBy(
-                                                "money_out_currency"
-                                              )
-                                            }
-                                          }
-                                        },
-                                        [
-                                          _vm._v("Currency"),
-                                          _c(
-                                            "span",
-                                            { staticClass: "sorting-icons" },
-                                            [
-                                              _c("i", {
-                                                staticClass:
-                                                  "ti-arrows-vertical"
-                                              })
-                                            ]
-                                          )
-                                        ]
-                                      )
-                                    ]
-                                  ),
-                                  _vm._v(" "),
-                                  _c(
-                                    "th",
-                                    {
-                                      class:
-                                        this.settings.module + "_col_money_out"
-                                    },
-                                    [
-                                      _c(
-                                        "a",
-                                        {
-                                          attrs: {
-                                            id: "sort_money_out",
-                                            href: "javascript:void(0)"
-                                          },
-                                          on: {
-                                            click: function($event) {
-                                              $event.preventDefault()
-                                              return _vm.sortBy("money_out")
-                                            }
-                                          }
-                                        },
-                                        [
-                                          _vm._v("Money Out"),
-                                          _c(
-                                            "span",
-                                            { staticClass: "sorting-icons" },
-                                            [
-                                              _c("i", {
-                                                staticClass:
-                                                  "ti-arrows-vertical"
-                                              })
-                                            ]
-                                          )
-                                        ]
-                                      )
-                                    ]
-                                  ),
-                                  _vm._v(" "),
-                                  _c(
-                                    "th",
-                                    {
-                                      class:
-                                        this.settings.module +
-                                        "_col_balance_currency"
-                                    },
-                                    [
-                                      _c(
-                                        "a",
-                                        {
-                                          attrs: {
-                                            id: "sort_balance_currency",
-                                            href: "javascript:void(0)"
-                                          },
-                                          on: {
-                                            click: function($event) {
-                                              $event.preventDefault()
-                                              return _vm.sortBy(
-                                                "balance_currency"
-                                              )
-                                            }
-                                          }
-                                        },
-                                        [
-                                          _vm._v("Currency"),
-                                          _c(
-                                            "span",
-                                            { staticClass: "sorting-icons" },
-                                            [
-                                              _c("i", {
-                                                staticClass:
-                                                  "ti-arrows-vertical"
-                                              })
-                                            ]
-                                          )
-                                        ]
-                                      )
-                                    ]
-                                  ),
-                                  _vm._v(" "),
-                                  _c(
-                                    "th",
-                                    {
-                                      class:
-                                        this.settings.module + "_col_balance"
-                                    },
-                                    [
-                                      _c(
-                                        "a",
-                                        {
-                                          attrs: {
-                                            id: "sort_balance",
-                                            href: "javascript:void(0)"
-                                          },
-                                          on: {
-                                            click: function($event) {
-                                              $event.preventDefault()
-                                              return _vm.sortBy("balance")
-                                            }
-                                          }
-                                        },
-                                        [
-                                          _vm._v("Balance"),
-                                          _c(
-                                            "span",
-                                            { staticClass: "sorting-icons" },
-                                            [
-                                              _c("i", {
-                                                staticClass:
-                                                  "ti-arrows-vertical"
-                                              })
-                                            ]
-                                          )
-                                        ]
-                                      )
-                                    ]
-                                  ),
-                                  _vm._v(" "),
-                                  _c(
-                                    "th",
-                                    {
-                                      class:
-                                        this.settings.module + "_col_action"
-                                    },
-                                    [
-                                      _c(
-                                        "a",
-                                        {
-                                          attrs: { href: "javascript:void(0)" }
-                                        },
-                                        [_vm._v("Action")]
-                                      )
-                                    ]
-                                  )
-                                ])
-                              ]),
-                              _vm._v(" "),
-                              _c("TableRows", {
-                                attrs: {
-                                  url: this.settings.url,
-                                  moduleName: this.settings.module,
-                                  statements: _vm.statements
-                                },
-                                on: { "on-show-edit": _vm.toggleStatement }
-                              }),
-                              _vm._v(" "),
-                              _vm.filter_params.page !=
-                              _vm.filter_params.last_page
-                                ? _c("tfoot", [
-                                    _c("tr", [
-                                      _c("td", { attrs: { colspan: "20" } }, [
+                          _c("i", { staticClass: "sl-icon-trash" }),
+                          _vm._v(" Delete\r\n                    ")
+                        ]
+                      )
+                    ])
+                  : _c("div", { staticClass: "x-notice" }, [
+                      _vm._v(
+                        "\r\n                    No actions are available\r\n                "
+                      )
+                    ])
+              ]
+            ),
+            _vm._v(" "),
+            this.loading
+              ? _c("PulseLoader", {
+                  staticClass: "text-center",
+                  attrs: { loading: this.loading }
+                })
+              : _c(
+                  "div",
+                  {
+                    class: "card count-" + _vm.statements.length,
+                    attrs: { id: this.settings.module + "-table-wrapper" }
+                  },
+                  [
+                    _c(
+                      "div",
+                      { staticClass: "card-body" },
+                      [
+                        !_vm.statements.length
+                          ? _c("not-found")
+                          : _c(
+                              "div",
+                              {
+                                staticClass:
+                                  "table-responsive list-table-wrapper min-h-400"
+                              },
+                              [
+                                _c(
+                                  "table",
+                                  {
+                                    staticClass:
+                                      "table m-t-0 m-b-0 table-hover no-wrap contact-list",
+                                    attrs: {
+                                      id: this.settings.module + "-list-table",
+                                      "data-page-size": "10"
+                                    }
+                                  },
+                                  [
+                                    _c("thead", [
+                                      _c("tr", [
                                         _c(
-                                          "div",
+                                          "th",
                                           {
-                                            staticClass:
-                                              "autoload loadmore-button-container",
-                                            attrs: {
-                                              id: "team_see_more_button"
-                                            }
+                                            staticClass: "list-checkbox-wrapper"
+                                          },
+                                          [
+                                            _c(
+                                              "span",
+                                              {
+                                                staticClass:
+                                                  "list-checkboxes display-inline-block w-px-20"
+                                              },
+                                              [
+                                                _c("input", {
+                                                  staticClass:
+                                                    "listcheckbox-all filled-in chk-col-light-blue",
+                                                  attrs: {
+                                                    type: "checkbox",
+                                                    id:
+                                                      "listcheckbox-" +
+                                                      this.settings.module,
+                                                    name:
+                                                      "listcheckbox-" +
+                                                      this.settings.module,
+                                                    "data-actions-container-class":
+                                                      this.settings.module +
+                                                      "-checkbox-actions-container",
+                                                    "data-children-checkbox-class":
+                                                      "listcheckbox-" +
+                                                      this.settings.module
+                                                  }
+                                                }),
+                                                _vm._v(" "),
+                                                _c("label", {
+                                                  attrs: {
+                                                    for:
+                                                      "listcheckbox-" +
+                                                      this.settings.module
+                                                  }
+                                                })
+                                              ]
+                                            )
+                                          ]
+                                        ),
+                                        _vm._v(" "),
+                                        _c(
+                                          "th",
+                                          {
+                                            class:
+                                              this.settings.module +
+                                              "_col_account_number"
                                           },
                                           [
                                             _c(
                                               "a",
                                               {
-                                                staticClass:
-                                                  "btn btn-rounded btn-secondary js-ajax-ux-request",
                                                 attrs: {
-                                                  "data-loading-target":
-                                                    "temp-td-container",
-                                                  href: "javascript:void(0)",
-                                                  id: "load-more-button"
+                                                  id: "sort_account_number",
+                                                  href: "javascript:void(0)"
                                                 },
                                                 on: {
                                                   click: function($event) {
                                                     $event.preventDefault()
-                                                    return _vm.loadMore.apply(
-                                                      null,
-                                                      arguments
+                                                    return _vm.sortBy(
+                                                      "account_number"
                                                     )
                                                   }
                                                 }
                                               },
-                                              [_vm._v("show more")]
+                                              [
+                                                _vm._v("Account Number"),
+                                                _c(
+                                                  "span",
+                                                  {
+                                                    staticClass: "sorting-icons"
+                                                  },
+                                                  [
+                                                    _c("i", {
+                                                      staticClass:
+                                                        "ti-arrows-vertical"
+                                                    })
+                                                  ]
+                                                )
+                                              ]
+                                            )
+                                          ]
+                                        ),
+                                        _vm._v(" "),
+                                        _c(
+                                          "th",
+                                          {
+                                            class:
+                                              this.settings.module + "_col_date"
+                                          },
+                                          [
+                                            _c(
+                                              "a",
+                                              {
+                                                attrs: {
+                                                  id: "sort_date",
+                                                  href: "javascript:void(0)"
+                                                },
+                                                on: {
+                                                  click: function($event) {
+                                                    $event.preventDefault()
+                                                    return _vm.sortBy("date")
+                                                  }
+                                                }
+                                              },
+                                              [
+                                                _vm._v("Date"),
+                                                _c(
+                                                  "span",
+                                                  {
+                                                    staticClass: "sorting-icons"
+                                                  },
+                                                  [
+                                                    _c("i", {
+                                                      staticClass:
+                                                        "ti-arrows-vertical"
+                                                    })
+                                                  ]
+                                                )
+                                              ]
+                                            )
+                                          ]
+                                        ),
+                                        _vm._v(" "),
+                                        _c(
+                                          "th",
+                                          {
+                                            class:
+                                              this.settings.module +
+                                              "_col_description"
+                                          },
+                                          [
+                                            _c(
+                                              "a",
+                                              {
+                                                attrs: {
+                                                  id: "sort_description",
+                                                  href: "javascript:void(0)"
+                                                },
+                                                on: {
+                                                  click: function($event) {
+                                                    $event.preventDefault()
+                                                    return _vm.sortBy(
+                                                      "description"
+                                                    )
+                                                  }
+                                                }
+                                              },
+                                              [
+                                                _vm._v("Description"),
+                                                _c(
+                                                  "span",
+                                                  {
+                                                    staticClass: "sorting-icons"
+                                                  },
+                                                  [
+                                                    _c("i", {
+                                                      staticClass:
+                                                        "ti-arrows-vertical"
+                                                    })
+                                                  ]
+                                                )
+                                              ]
+                                            )
+                                          ]
+                                        ),
+                                        _vm._v(" "),
+                                        _c(
+                                          "th",
+                                          {
+                                            class:
+                                              this.settings.module +
+                                              "_col_debit_currency"
+                                          },
+                                          [
+                                            _c(
+                                              "a",
+                                              {
+                                                attrs: {
+                                                  id: "sort_debit_currency",
+                                                  href: "javascript:void(0)"
+                                                },
+                                                on: {
+                                                  click: function($event) {
+                                                    $event.preventDefault()
+                                                    return _vm.sortBy(
+                                                      "debit_currency"
+                                                    )
+                                                  }
+                                                }
+                                              },
+                                              [
+                                                _vm._v("Currency"),
+                                                _c(
+                                                  "span",
+                                                  {
+                                                    staticClass: "sorting-icons"
+                                                  },
+                                                  [
+                                                    _c("i", {
+                                                      staticClass:
+                                                        "ti-arrows-vertical"
+                                                    })
+                                                  ]
+                                                )
+                                              ]
+                                            )
+                                          ]
+                                        ),
+                                        _vm._v(" "),
+                                        _c(
+                                          "th",
+                                          {
+                                            class:
+                                              this.settings.module +
+                                              "_col_debit"
+                                          },
+                                          [
+                                            _c(
+                                              "a",
+                                              {
+                                                attrs: {
+                                                  id: "sort_debit",
+                                                  href: "javascript:void(0)"
+                                                },
+                                                on: {
+                                                  click: function($event) {
+                                                    $event.preventDefault()
+                                                    return _vm.sortBy("debit")
+                                                  }
+                                                }
+                                              },
+                                              [
+                                                _vm._v("Money In"),
+                                                _c(
+                                                  "span",
+                                                  {
+                                                    staticClass: "sorting-icons"
+                                                  },
+                                                  [
+                                                    _c("i", {
+                                                      staticClass:
+                                                        "ti-arrows-vertical"
+                                                    })
+                                                  ]
+                                                )
+                                              ]
+                                            )
+                                          ]
+                                        ),
+                                        _vm._v(" "),
+                                        _c(
+                                          "th",
+                                          {
+                                            class:
+                                              this.settings.module +
+                                              "_col_credit_currency"
+                                          },
+                                          [
+                                            _c(
+                                              "a",
+                                              {
+                                                attrs: {
+                                                  id: "sort_credit_currency",
+                                                  href: "javascript:void(0)"
+                                                },
+                                                on: {
+                                                  click: function($event) {
+                                                    $event.preventDefault()
+                                                    return _vm.sortBy(
+                                                      "credit_currency"
+                                                    )
+                                                  }
+                                                }
+                                              },
+                                              [
+                                                _vm._v("Currency"),
+                                                _c(
+                                                  "span",
+                                                  {
+                                                    staticClass: "sorting-icons"
+                                                  },
+                                                  [
+                                                    _c("i", {
+                                                      staticClass:
+                                                        "ti-arrows-vertical"
+                                                    })
+                                                  ]
+                                                )
+                                              ]
+                                            )
+                                          ]
+                                        ),
+                                        _vm._v(" "),
+                                        _c(
+                                          "th",
+                                          {
+                                            class:
+                                              this.settings.module +
+                                              "_col_credit"
+                                          },
+                                          [
+                                            _c(
+                                              "a",
+                                              {
+                                                attrs: {
+                                                  id: "sort_credit",
+                                                  href: "javascript:void(0)"
+                                                },
+                                                on: {
+                                                  click: function($event) {
+                                                    $event.preventDefault()
+                                                    return _vm.sortBy("credit")
+                                                  }
+                                                }
+                                              },
+                                              [
+                                                _vm._v("Money Out"),
+                                                _c(
+                                                  "span",
+                                                  {
+                                                    staticClass: "sorting-icons"
+                                                  },
+                                                  [
+                                                    _c("i", {
+                                                      staticClass:
+                                                        "ti-arrows-vertical"
+                                                    })
+                                                  ]
+                                                )
+                                              ]
+                                            )
+                                          ]
+                                        ),
+                                        _vm._v(" "),
+                                        _c(
+                                          "th",
+                                          {
+                                            class:
+                                              this.settings.module +
+                                              "_col_balance_currency"
+                                          },
+                                          [
+                                            _c(
+                                              "a",
+                                              {
+                                                attrs: {
+                                                  id: "sort_balance_currency",
+                                                  href: "javascript:void(0)"
+                                                },
+                                                on: {
+                                                  click: function($event) {
+                                                    $event.preventDefault()
+                                                    return _vm.sortBy(
+                                                      "balance_currency"
+                                                    )
+                                                  }
+                                                }
+                                              },
+                                              [
+                                                _vm._v("Currency"),
+                                                _c(
+                                                  "span",
+                                                  {
+                                                    staticClass: "sorting-icons"
+                                                  },
+                                                  [
+                                                    _c("i", {
+                                                      staticClass:
+                                                        "ti-arrows-vertical"
+                                                    })
+                                                  ]
+                                                )
+                                              ]
+                                            )
+                                          ]
+                                        ),
+                                        _vm._v(" "),
+                                        _c(
+                                          "th",
+                                          {
+                                            class:
+                                              this.settings.module +
+                                              "_col_balance"
+                                          },
+                                          [
+                                            _c(
+                                              "a",
+                                              {
+                                                attrs: {
+                                                  id: "sort_balance",
+                                                  href: "javascript:void(0)"
+                                                },
+                                                on: {
+                                                  click: function($event) {
+                                                    $event.preventDefault()
+                                                    return _vm.sortBy("balance")
+                                                  }
+                                                }
+                                              },
+                                              [
+                                                _vm._v("Balance"),
+                                                _c(
+                                                  "span",
+                                                  {
+                                                    staticClass: "sorting-icons"
+                                                  },
+                                                  [
+                                                    _c("i", {
+                                                      staticClass:
+                                                        "ti-arrows-vertical"
+                                                    })
+                                                  ]
+                                                )
+                                              ]
+                                            )
+                                          ]
+                                        ),
+                                        _vm._v(" "),
+                                        _c(
+                                          "th",
+                                          {
+                                            class:
+                                              this.settings.module +
+                                              "_col_action"
+                                          },
+                                          [
+                                            _c(
+                                              "a",
+                                              {
+                                                attrs: {
+                                                  href: "javascript:void(0)"
+                                                }
+                                              },
+                                              [_vm._v("Action")]
                                             )
                                           ]
                                         )
                                       ])
-                                    ])
-                                  ])
-                                : _vm._e()
-                            ],
-                            1
-                          )
-                        ]
-                      )
-                ],
-                1
-              )
-            ]
-          )
-        ])
+                                    ]),
+                                    _vm._v(" "),
+                                    _c("TableRows", {
+                                      attrs: {
+                                        url: this.settings.url,
+                                        moduleName: this.settings.module,
+                                        statements: _vm.statements
+                                      },
+                                      on: { "show-edit": _vm.toggleStatement }
+                                    }),
+                                    _vm._v(" "),
+                                    _vm.filter_params.page !=
+                                    _vm.filter_params.last_page
+                                      ? _c("tfoot", [
+                                          _c("tr", [
+                                            _c(
+                                              "td",
+                                              { attrs: { colspan: "20" } },
+                                              [
+                                                _c(
+                                                  "div",
+                                                  {
+                                                    staticClass:
+                                                      "autoload loadmore-button-container",
+                                                    attrs: {
+                                                      id: "team_see_more_button"
+                                                    }
+                                                  },
+                                                  [
+                                                    _c(
+                                                      "a",
+                                                      {
+                                                        staticClass:
+                                                          "btn btn-rounded btn-secondary js-ajax-ux-request",
+                                                        attrs: {
+                                                          "data-loading-target":
+                                                            "temp-td-container",
+                                                          href:
+                                                            "javascript:void(0)",
+                                                          id: "load-more-button"
+                                                        },
+                                                        on: {
+                                                          click: function(
+                                                            $event
+                                                          ) {
+                                                            $event.preventDefault()
+                                                            return _vm.loadMore.apply(
+                                                              null,
+                                                              arguments
+                                                            )
+                                                          }
+                                                        }
+                                                      },
+                                                      [_vm._v("show more")]
+                                                    )
+                                                  ]
+                                                )
+                                              ]
+                                            )
+                                          ])
+                                        ])
+                                      : _vm._e()
+                                  ],
+                                  1
+                                )
+                              ]
+                            )
+                      ],
+                      1
+                    )
+                  ]
+                )
+          ],
+          1
+        )
       ]),
       _vm._v(" "),
       this.settings.is_team
@@ -41623,6 +42005,82 @@ var render = function() {
                               ],
                               1
                             )
+                          ])
+                        ])
+                      ]),
+                      _vm._v(" "),
+                      _c("div", { staticClass: "filter-block" }, [
+                        _c("div", { staticClass: "fields" }, [
+                          _c("div", { staticClass: "row" }, [
+                            _c("div", { staticClass: "col-md-12" }, [
+                              _c("input", {
+                                directives: [
+                                  {
+                                    name: "model",
+                                    rawName: "v-model",
+                                    value: _vm.filter_params.without_tag,
+                                    expression: "filter_params.without_tag"
+                                  }
+                                ],
+                                staticClass:
+                                  "with-gap checkbox-col-blue create-modal-selector",
+                                attrs: {
+                                  name: "without_tag",
+                                  type: "checkbox",
+                                  id: "without_tag"
+                                },
+                                domProps: {
+                                  checked: Array.isArray(
+                                    _vm.filter_params.without_tag
+                                  )
+                                    ? _vm._i(
+                                        _vm.filter_params.without_tag,
+                                        null
+                                      ) > -1
+                                    : _vm.filter_params.without_tag
+                                },
+                                on: {
+                                  change: function($event) {
+                                    var $$a = _vm.filter_params.without_tag,
+                                      $$el = $event.target,
+                                      $$c = $$el.checked ? true : false
+                                    if (Array.isArray($$a)) {
+                                      var $$v = null,
+                                        $$i = _vm._i($$a, $$v)
+                                      if ($$el.checked) {
+                                        $$i < 0 &&
+                                          _vm.$set(
+                                            _vm.filter_params,
+                                            "without_tag",
+                                            $$a.concat([$$v])
+                                          )
+                                      } else {
+                                        $$i > -1 &&
+                                          _vm.$set(
+                                            _vm.filter_params,
+                                            "without_tag",
+                                            $$a
+                                              .slice(0, $$i)
+                                              .concat($$a.slice($$i + 1))
+                                          )
+                                      }
+                                    } else {
+                                      _vm.$set(
+                                        _vm.filter_params,
+                                        "without_tag",
+                                        $$c
+                                      )
+                                    }
+                                  }
+                                }
+                              }),
+                              _vm._v(" "),
+                              _c("label", { attrs: { for: "without_tag" } }, [
+                                _c("span", { staticClass: "x-label-text" }, [
+                                  _vm._v("Without Tag")
+                                ])
+                              ])
+                            ])
                           ])
                         ])
                       ]),
@@ -41716,7 +42174,7 @@ var render = function() {
               ],
               null,
               false,
-              2615999594
+              1209636215
             )
           })
         : _vm._e(),
@@ -41726,7 +42184,7 @@ var render = function() {
           title: _vm.modalTitle,
           module: this.settings.module,
           initialStatement: _vm.statement,
-          show: _vm.show(_vm.statementModal)
+          show: _vm.showStatement(_vm.statementModal)
         },
         on: {
           close: function($event) {
@@ -41736,10 +42194,13 @@ var render = function() {
       }),
       _vm._v(" "),
       _c("TagTable", {
-        attrs: { show: _vm.show(_vm.tagListingModal), settings: this.settings },
+        attrs: {
+          show: _vm.showTag(_vm.tagListingModal),
+          settings: this.settings
+        },
         on: {
           close: function($event) {
-            return _vm.toggle(_vm.tagListingModal)
+            return _vm.toggleTag(_vm.tagListingModal)
           }
         }
       })
@@ -41775,7 +42236,7 @@ var render = function() {
     [
       _c("Modal", {
         attrs: { modalID: "tag-modal", title: _vm.title, show: _vm.show },
-        on: { close: _vm.close, "on-submit": _vm.onSubmit },
+        on: { close: _vm.close, submit: _vm.onSubmit },
         scopedSlots: _vm._u([
           {
             key: "body",
@@ -42368,7 +42829,7 @@ var render = function() {
     [
       _c("Modal", {
         attrs: { modalID: "statement-modal", title: _vm.title, show: _vm.show },
-        on: { close: _vm.close, "on-submit": _vm.onSubmit },
+        on: { close: _vm.close, submit: _vm.onSubmit },
         scopedSlots: _vm._u([
           {
             key: "body",
@@ -42534,7 +42995,7 @@ var render = function() {
                       staticClass:
                         "col-sm-12 col-lg-3 text-left control-label col-form-label"
                     },
-                    [_vm._v("Money In Currency")]
+                    [_vm._v("Debit Currency")]
                   ),
                   _vm._v(" "),
                   _c("div", { staticClass: "col-sm-12 col-lg-9" }, [
@@ -42543,21 +43004,21 @@ var render = function() {
                         {
                           name: "model",
                           rawName: "v-model",
-                          value: _vm.statement.money_in_currency,
-                          expression: "statement.money_in_currency"
+                          value: _vm.statement.debit_currency,
+                          expression: "statement.debit_currency"
                         }
                       ],
                       staticClass: "form-control form-control-sm",
-                      class: { error: _vm.errors.has("money_in_currency") },
+                      class: { error: _vm.errors.has("debit_currency") },
                       attrs: {
                         type: "text",
-                        name: "money_in_currency",
-                        id: "money_in_currency",
+                        name: "debit_currency",
+                        id: "debit_currency",
                         autocomplete: "off",
                         placeholder: "",
                         "aria-invalid": "true"
                       },
-                      domProps: { value: _vm.statement.money_in_currency },
+                      domProps: { value: _vm.statement.debit_currency },
                       on: {
                         input: function($event) {
                           if ($event.target.composing) {
@@ -42565,7 +43026,7 @@ var render = function() {
                           }
                           _vm.$set(
                             _vm.statement,
-                            "money_in_currency",
+                            "debit_currency",
                             $event.target.value
                           )
                         }
@@ -42581,7 +43042,7 @@ var render = function() {
                       staticClass:
                         "col-sm-12 col-lg-3 text-left control-label col-form-label"
                     },
-                    [_vm._v("Money In")]
+                    [_vm._v("Debit")]
                   ),
                   _vm._v(" "),
                   _c("div", { staticClass: "col-sm-12 col-lg-9" }, [
@@ -42600,21 +43061,21 @@ var render = function() {
                           {
                             name: "model",
                             rawName: "v-model",
-                            value: _vm.statement.money_in,
-                            expression: "statement.money_in"
+                            value: _vm.statement.debit,
+                            expression: "statement.debit"
                           }
                         ],
                         staticClass: "form-control form-control-sm",
-                        class: { error: _vm.errors.has("money_in") },
+                        class: { error: _vm.errors.has("debit") },
                         attrs: {
                           type: "number",
-                          name: "money_in",
-                          id: "money_in",
+                          name: "debit",
+                          id: "debit",
                           autocomplete: "off",
                           placeholder: "",
                           "aria-invalid": "true"
                         },
-                        domProps: { value: _vm.statement.money_in },
+                        domProps: { value: _vm.statement.debit },
                         on: {
                           input: function($event) {
                             if ($event.target.composing) {
@@ -42622,7 +43083,7 @@ var render = function() {
                             }
                             _vm.$set(
                               _vm.statement,
-                              "money_in",
+                              "debit",
                               $event.target.value
                             )
                           }
@@ -42639,7 +43100,7 @@ var render = function() {
                       staticClass:
                         "col-sm-12 col-lg-3 text-left control-label col-form-label"
                     },
-                    [_vm._v("Money Out Currency")]
+                    [_vm._v("Credit Currency")]
                   ),
                   _vm._v(" "),
                   _c("div", { staticClass: "col-sm-12 col-lg-9" }, [
@@ -42648,21 +43109,21 @@ var render = function() {
                         {
                           name: "model",
                           rawName: "v-model",
-                          value: _vm.statement.money_out_currency,
-                          expression: "statement.money_out_currency"
+                          value: _vm.statement.credit_currency,
+                          expression: "statement.credit_currency"
                         }
                       ],
                       staticClass: "form-control form-control-sm",
-                      class: { error: _vm.errors.has("money_out_currency") },
+                      class: { error: _vm.errors.has("credit_currency") },
                       attrs: {
                         type: "text",
-                        name: "money_out_currency",
-                        id: "money_out_currency",
+                        name: "credit_currency",
+                        id: "credit_currency",
                         autocomplete: "off",
                         placeholder: "",
                         "aria-invalid": "true"
                       },
-                      domProps: { value: _vm.statement.money_out_currency },
+                      domProps: { value: _vm.statement.credit_currency },
                       on: {
                         input: function($event) {
                           if ($event.target.composing) {
@@ -42670,7 +43131,7 @@ var render = function() {
                           }
                           _vm.$set(
                             _vm.statement,
-                            "money_out_currency",
+                            "credit_currency",
                             $event.target.value
                           )
                         }
@@ -42686,7 +43147,7 @@ var render = function() {
                       staticClass:
                         "col-sm-12 col-lg-3 text-left control-label col-form-label"
                     },
-                    [_vm._v("Money Out")]
+                    [_vm._v("Credit")]
                   ),
                   _vm._v(" "),
                   _c("div", { staticClass: "col-sm-12 col-lg-9" }, [
@@ -42705,21 +43166,21 @@ var render = function() {
                           {
                             name: "model",
                             rawName: "v-model",
-                            value: _vm.statement.money_out,
-                            expression: "statement.money_out"
+                            value: _vm.statement.credit,
+                            expression: "statement.credit"
                           }
                         ],
                         staticClass: "form-control form-control-sm",
-                        class: { error: _vm.errors.has("money_out") },
+                        class: { error: _vm.errors.has("credit") },
                         attrs: {
                           type: "number",
-                          name: "money_out",
-                          id: "money_out",
+                          name: "credit",
+                          id: "credit",
                           autocomplete: "off",
                           placeholder: "",
                           "aria-invalid": "true"
                         },
-                        domProps: { value: _vm.statement.money_out },
+                        domProps: { value: _vm.statement.credit },
                         on: {
                           input: function($event) {
                             if ($event.target.composing) {
@@ -42727,7 +43188,7 @@ var render = function() {
                             }
                             _vm.$set(
                               _vm.statement,
-                              "money_out",
+                              "credit",
                               $event.target.value
                             )
                           }
@@ -42982,15 +43443,39 @@ var render = function() {
         _c(
           "td",
           {
-            class: _vm.moduleName + "_col_money_in_currency",
+            class: _vm.moduleName + "_col_debit_currency",
             attrs: {
-              id: _vm.moduleName + "_col_money_in_currency_" + statement.id
+              id: _vm.moduleName + "_col_debit_currency_" + statement.id
+            }
+          },
+          [
+            _vm._v(
+              "\n            " + _vm._s(statement.debit_currency) + "\n        "
+            )
+          ]
+        ),
+        _vm._v(" "),
+        _c(
+          "td",
+          {
+            class: _vm.moduleName + "_col_debit",
+            attrs: { id: _vm.moduleName + "_col_debit_" + statement.id }
+          },
+          [_vm._v("\n            " + _vm._s(statement.debit) + "\n        ")]
+        ),
+        _vm._v(" "),
+        _c(
+          "td",
+          {
+            class: _vm.moduleName + "_col_credit_currency",
+            attrs: {
+              id: _vm.moduleName + "_col_credit_currency_" + statement.id
             }
           },
           [
             _vm._v(
               "\n            " +
-                _vm._s(statement.money_in_currency) +
+                _vm._s(statement.credit_currency) +
                 "\n        "
             )
           ]
@@ -42999,40 +43484,10 @@ var render = function() {
         _c(
           "td",
           {
-            class: _vm.moduleName + "_col_money_in",
-            attrs: { id: _vm.moduleName + "_col_money_in_" + statement.id }
+            class: _vm.moduleName + "_col_credit",
+            attrs: { id: _vm.moduleName + "_col_credit_" + statement.id }
           },
-          [_vm._v("\n            " + _vm._s(statement.money_in) + "\n        ")]
-        ),
-        _vm._v(" "),
-        _c(
-          "td",
-          {
-            class: _vm.moduleName + "_col_money_out_currency",
-            attrs: {
-              id: _vm.moduleName + "_col_money_out_currency_" + statement.id
-            }
-          },
-          [
-            _vm._v(
-              "\n            " +
-                _vm._s(statement.money_out_currency) +
-                "\n        "
-            )
-          ]
-        ),
-        _vm._v(" "),
-        _c(
-          "td",
-          {
-            class: _vm.moduleName + "_col_money_out",
-            attrs: { id: _vm.moduleName + "_col_money_out_" + statement.id }
-          },
-          [
-            _vm._v(
-              "\n            " + _vm._s(statement.money_out) + "\n        "
-            )
-          ]
+          [_vm._v("\n            " + _vm._s(statement.credit) + "\n        ")]
         ),
         _vm._v(" "),
         _c(
@@ -43099,7 +43554,7 @@ var render = function() {
                     on: {
                       click: function($event) {
                         $event.stopPropagation()
-                        return _vm.$emit("on-show-edit", {
+                        return _vm.$emit("show-edit", {
                           id: "statement-modal",
                           data: statement
                         })

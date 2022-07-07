@@ -13,7 +13,3 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-Route::get('/statement-analyzer', function () {
-    return 'aa';
-})->name('datatable.statement-analysis.index');
-// Route::get('/statement-analyzer', '\Ant\StatementAnalyzer\Http\Controllers\DataTable\StatementAnalyzerController@index');

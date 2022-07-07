@@ -23,6 +23,7 @@
         "vue-head": "^2.2.0",
         "vue-loader": "^15.9.6",
         "vue-set-value": "^1.0.3",
+        "vue-spinner": "^1.0.4",
         "vuejs-datepicker": "^1.6.2",
         "vuejs-form": "^1.2.9",
         "vuejs-validators": "^1.1.7"

@@ -30,7 +30,7 @@ class StoreStatementTagRequest extends FormRequest
         return [
             'name' => [
                 'required', 
-                Rule::unique('statement_tags')
+                Rule::unique('statement_tags')->whereNull('deleted_at')
             ],
         ];
     }

@@ -5,7 +5,7 @@
         :title="title"
         :show="show"
         @close="close"
-        @on-submit="onSubmit">
+        @submit="onSubmit">
             <template #body>
                 <!-- account number -->
                 <div class="form-group row">
@@ -39,45 +39,45 @@
                         <span class="text-bold text-danger" v-if="errors.has('description')" v-text="errors.get('description')"></span>
                     </div>
                 </div>
-                <!-- money in currency -->
+                <!-- debit currency -->
                 <div class="form-group row">
-                    <label class="col-sm-12 col-lg-3 text-left control-label col-form-label">Money In Currency</label>
+                    <label class="col-sm-12 col-lg-3 text-left control-label col-form-label">Debit Currency</label>
                     <div class="col-sm-12 col-lg-9">
-                        <input type="text" name="money_in_currency" class="form-control form-control-sm" :class="{'error' : errors.has('money_in_currency')}"
-                            id="money_in_currency" autocomplete="off" placeholder="" aria-invalid="true"
-                            v-model="statement.money_in_currency">
+                        <input type="text" name="debit_currency" class="form-control form-control-sm" :class="{'error' : errors.has('debit_currency')}"
+                            id="debit_currency" autocomplete="off" placeholder="" aria-invalid="true"
+                            v-model="statement.debit_currency">
                     </div>
                 </div>
-                <!-- money in -->
+                <!-- debit -->
                 <div class="form-group row">
-                    <label class="col-sm-12 col-lg-3 text-left control-label col-form-label">Money In</label>
+                    <label class="col-sm-12 col-lg-3 text-left control-label col-form-label">Debit</label>
                     <div class="col-sm-12 col-lg-9">
                         <div class="input-group input-group-sm">
                             <span class="input-group-addon" id="basic-addon2">$</span>
-                            <input type="number" name="money_in" class="form-control form-control-sm" :class="{'error' : errors.has('money_in')}"
-                                id="money_in" autocomplete="off" placeholder="" aria-invalid="true"
-                                v-model="statement.money_in">
+                            <input type="number" name="debit" class="form-control form-control-sm" :class="{'error' : errors.has('debit')}"
+                                id="debit" autocomplete="off" placeholder="" aria-invalid="true"
+                                v-model="statement.debit">
                         </div>
                     </div>
                 </div>
-                <!-- money out currency -->
+                <!-- credit currency -->
                 <div class="form-group row">
-                    <label class="col-sm-12 col-lg-3 text-left control-label col-form-label">Money Out Currency</label>
+                    <label class="col-sm-12 col-lg-3 text-left control-label col-form-label">Credit Currency</label>
                     <div class="col-sm-12 col-lg-9">
-                        <input type="text" name="money_out_currency" class="form-control form-control-sm" :class="{'error' : errors.has('money_out_currency')}"
-                            id="money_out_currency" autocomplete="off" placeholder="" aria-invalid="true"
-                            v-model="statement.money_out_currency">
+                        <input type="text" name="credit_currency" class="form-control form-control-sm" :class="{'error' : errors.has('credit_currency')}"
+                            id="credit_currency" autocomplete="off" placeholder="" aria-invalid="true"
+                            v-model="statement.credit_currency">
                     </div>
                 </div>
-                <!-- money out -->
+                <!-- credit -->
                 <div class="form-group row">
-                    <label class="col-sm-12 col-lg-3 text-left control-label col-form-label">Money Out</label>
+                    <label class="col-sm-12 col-lg-3 text-left control-label col-form-label">Credit</label>
                     <div class="col-sm-12 col-lg-9">
                         <div class="input-group input-group-sm">
                             <span class="input-group-addon" id="basic-addon2">$</span>
-                            <input type="number" name="money_out" class="form-control form-control-sm" :class="{'error' : errors.has('money_out')}"
-                                id="money_out" autocomplete="off" placeholder="" aria-invalid="true"
-                                v-model="statement.money_out">
+                            <input type="number" name="credit" class="form-control form-control-sm" :class="{'error' : errors.has('credit')}"
+                                id="credit" autocomplete="off" placeholder="" aria-invalid="true"
+                                v-model="statement.credit">
                         </div>
                     </div>
                 </div>
@@ -151,10 +151,10 @@
                     account_number: "",
                     date: "",
                     description: "",
-                    money_in_currency: "",
-                    money_in: "",
-                    money_out_currency: "",
-                    money_out: "",
+                    debit_currency: "",
+                    debit: "",
+                    credit_currency: "",
+                    credit: "",
                     balance_currency: "",
                     balance: "",
                 },
@@ -168,10 +168,10 @@
                     account_number: "",
                     date: "",
                     description: "",
-                    money_in_currency: "",
-                    money_in: "",
-                    money_out_currency: "",
-                    money_out: "",
+                    debit_currency: "",
+                    debit: "",
+                    credit_currency: "",
+                    credit: "",
                     balance_currency: "",
                     balance: "",
                 };

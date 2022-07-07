@@ -30,7 +30,7 @@ class UpdateStatementTagRequest extends FormRequest
         return [
             'name' => [
                 'required',
-                Rule::unique('statement_tags')->ignore($this->id),
+                Rule::unique('statement_tags')->ignore($this->id)->whereNull('deleted_at'),
             ]
         ];
     }

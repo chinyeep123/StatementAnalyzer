@@ -40,13 +40,11 @@ class ImportStatementRequest extends FormRequest
      * @throws \Illuminate\Validation\ValidationException
      */
     protected function failedValidation(Validator $validator) {
-        if ($validator->fails()) {
-            $errors = $validator->errors();
-            $messages = '';
-            foreach ($errors->all() as $message) {
-                $messages .= "<li>$message</li>";
-            }
-            abort(409, $messages);
+        $errors = $validator->errors();
+        $messages = '';
+        foreach ($errors->all() as $message) {
+            $messages .= "<li>$message</li>";
         }
+        abort(409, $messages);
     }
 }

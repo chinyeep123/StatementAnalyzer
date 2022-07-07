@@ -17,7 +17,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-default" data-dismiss="modal" @click.prevent="$emit('close')">Close</button>
-                            <button type="button" class="btn btn-rounded-x btn-danger waves-effect text-left" @click.prevent="$emit('on-submit')" v-show="this.submit">Submit</button>
+                            <button type="button" class="btn btn-rounded-x btn-danger waves-effect text-left" @click.prevent="$emit('submit')" v-show="this.submit">Submit</button>
                         </div>
                     </div>
                 </div>

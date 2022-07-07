@@ -19,13 +19,13 @@
                                 <template v-for="(analyzer, index) in this.analysis">
                                     <tr :id="'analyzer'+ index">
                                         <td class="text-bold">{{ analyzer.name }}</td>
-                                        <td>{{ analyzer.money_in }}</td>
-                                        <td>{{ analyzer.money_out }}</td>
+                                        <td>{{ getSumDebit(analyzer) }}</td>
+                                        <td>{{ getSumCredit(analyzer) }}</td>
                                     </tr>
                                     <tr v-for="(child, index1) in analyzer.childs" :id="'analyzer'+ index + 'child-' + index1">
                                         <td>- {{ child.name }}</td>
-                                        <td>{{ child.money_in }}</td>
-                                        <td>{{ child.money_out }}</td>
+                                        <td>{{ child.debit }}</td>
+                                        <td>{{ child.credit }}</td>
                                     </tr>
                                 </template>
                             </tbody>
@@ -38,6 +38,7 @@
 </template>
 
 <script>
+    import _ from 'lodash';
     export default {
         name: 'Analysis',
         props: {
@@ -61,6 +62,12 @@
         },
 
         methods: {
+            getSumDebit(analyzer) {
+                return analyzer.childs? _.sumBy(analyzer.childs, 'debit') : analyzer.debit;
+            },
+            getSumCredit(analyzer) {
+                return analyzer.childs? _.sumBy(analyzer.childs, 'credit') : analyzer.credit;
+            }
         },
 
     }

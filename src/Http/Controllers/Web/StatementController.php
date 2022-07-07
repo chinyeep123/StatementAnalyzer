@@ -128,10 +128,10 @@ class StatementController extends Controller {
             'account_number' => $request->account_number,
             'date' => $request->date,
             'description' => $request->description,
-            'money_in_currency' => $request->money_in_currency,
-            'money_in' => $request->money_in,
-            'money_out_currency' => $request->money_out_currency,
-            'money_out' => $request->money_out,
+            'debit_currency' => $request->debit_currency,
+            'debit' => $request->debit,
+            'credit_currency' => $request->credit_currency,
+            'credit' => $request->credit,
             'balance_currency' => $request->balance_currency,
             'balance' => $request->balance,
         ]);
@@ -174,10 +174,10 @@ class StatementController extends Controller {
             'account_number' => $request->account_number,
             'date' => $request->date,
             'description' => $request->description,
-            'money_in_currency' => $request->money_in_currency,
-            'money_in' => $request->money_in,
-            'money_out_currency' => $request->money_out_currency,
-            'money_out' => $request->money_out,
+            'debit_currency' => $request->debit_currency,
+            'debit' => $request->debit,
+            'credit_currency' => $request->credit_currency,
+            'credit' => $request->credit,
             'balance_currency' => $request->balance_currency,
             'balance' => $request->balance,
         ]);
@@ -333,8 +333,8 @@ class StatementController extends Controller {
 
         //stats
         $count_all = $this->statementrepo->search('', ['stats' => 'count-all']);
-        $sum_money_in = $this->statementrepo->search('', ['stats' => 'sum-money_in']);
-        $sum_money_out = $this->statementrepo->search('', ['stats' => 'sum-money_out']);
+        $sum_debit = $this->statementrepo->search('', ['stats' => 'sum-debit']);
+        $sum_credit = $this->statementrepo->search('', ['stats' => 'sum-credit']);
         $stats = [
             [
                 'value' => $count_all,
@@ -343,14 +343,14 @@ class StatementController extends Controller {
                 'color' => 'bg-info',
             ],
             [
-                'value' => runtimeMoneyFormat($sum_money_in),
-                'title' => __('lang.money_in'),
+                'value' => runtimeMoneyFormat($sum_debit),
+                'title' => __('lang.debit'),
                 'percentage' => '100%',
                 'color' => 'bg-success',
             ],
             [
-                'value' => runtimeMoneyFormat($sum_money_out),
-                'title' => __('lang.money_out'),
+                'value' => runtimeMoneyFormat($sum_credit),
+                'title' => __('lang.credit'),
                 'percentage' => '100%',
                 'color' => 'bg-warning',
             ],

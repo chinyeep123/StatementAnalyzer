@@ -5,7 +5,7 @@
         :title="title"
         :show="show"
         @close="close"
-        @on-submit="onSubmit">
+        @submit="onSubmit">
             <template #body>
                 <!-- parent id -->
                 <div class="form-group row">
